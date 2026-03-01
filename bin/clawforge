@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+# clawforge — Unified CLI for agent swarm workflow
+# Routes subcommands to individual module scripts.
+set -euo pipefail
+
+# Resolve symlinks to find the real install location
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+CLAWFORGE_DIR="$(cd "$(dirname "$SOURCE")/.." && pwd)"
+BIN_DIR="${CLAWFORGE_DIR}/bin"
+
+# ── Global flags ───────────────────────────────────────────────────────
+PASSTHROUGH_ARGS=()
+for arg in "$@"; do
+  if [[ "$arg" == "--verbose" ]]; then
+    export CLAWFORGE_DEBUG=1
+  else
+    PASSTHROUGH_ARGS+=("$arg")
+  fi
+done
+set -- "${PASSTHROUGH_ARGS[@]+"${PASSTHROUGH_ARGS[@]}"}"
+
+# ── Version ────────────────────────────────────────────────────────────
+show_version() {
+  local ver
+  ver=$(cat "${CLAWFORGE_DIR}/VERSION" 2>/dev/null || echo "unknown")
+  echo "clawforge v${ver}"
+}
+
+# ── Help ───────────────────────────────────────────────────────────────
+show_help() {
+  cat <<EOF
+$(show_version)
+Agent swarm workflow — spawn, monitor, review, and manage coding agents.
+
+Usage: clawforge <command> [options]
+
+Commands:
+  scope       Assemble a prompt with context (Module 1)
+  spawn       Create worktree + launch coding agent (Module 2)
+  status      Show all active tasks (Module 3/4)
+  watch       Run health checks on all agents (Module 4)
+  review      Run multi-model code review on PR (Module 5)
+  notify      Send Discord notification (Module 6)
+  merge       Merge helper with safety checks (Module 7)
+  clean       Clean up completed tasks (Module 8)
+  learn       Record learnings from completed tasks (Module 9)
+
+Shortcuts:
+  run         Scope + spawn in one step (the common case)
+  dashboard   Pretty-print status + recent activity
+
+Meta:
+  help        Show this help
+  version     Show version
+
+Global flags:
+  --verbose   Enable debug logging
+
+Examples:
+  clawforge run --repo ~/github/myapp --branch feat/auth --task "Add JWT auth"
+  clawforge status
+  clawforge watch --dry-run
+  clawforge review --repo ~/github/myapp --pr 42
+  clawforge dashboard
+EOF
+}
+
+# ── Dashboard ──────────────────────────────────────────────────────────
+show_dashboard() {
+  source "${CLAWFORGE_DIR}/lib/common.sh"
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                   clawforge dashboard                       ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+
+  # Active tasks
+  echo "── Active Tasks ──────────────────────────────────────────────"
+  local tasks
+  tasks=$(registry_list 2>/dev/null || echo "[]")
+  local count
+  count=$(echo "$tasks" | jq 'length' 2>/dev/null || echo 0)
+  if [[ "$count" == "0" ]]; then
+    echo "  No active tasks."
+  else
+    echo "$tasks" | jq -r '.[] | "  [\(.status // "unknown")] \(.id) — \(.task // .description // "no description")[0:60]"' 2>/dev/null || echo "  (error reading tasks)"
+  fi
+  echo ""
+
+  # Status summary
+  echo "── Status Summary ────────────────────────────────────────────"
+  for s in spawned running pr-created ci-passing reviewing done failed; do
+    local n
+    n=$(echo "$tasks" | jq --arg s "$s" '[.[] | select(.status == $s)] | length' 2>/dev/null || echo 0)
+    [[ "$n" != "0" ]] && echo "  ${s}: ${n}"
+  done
+  echo ""
+
+  # Recent learnings
+  local learnings_file="${CLAWFORGE_DIR}/registry/learnings.jsonl"
+  if [[ -f "$learnings_file" ]]; then
+    echo "── Recent Learnings ──────────────────────────────────────────"
+    tail -5 "$learnings_file" | while IFS= read -r line; do
+      local ts summary
+      ts=$(echo "$line" | jq -r '.timestamp // .ts // ""' 2>/dev/null | cut -c1-10)
+      summary=$(echo "$line" | jq -r '.summary // .notes // "(no summary)"' 2>/dev/null | head -c 70)
+      echo "  [${ts}] ${summary}"
+    done
+    echo ""
+  fi
+
+  echo "── Environment ───────────────────────────────────────────────"
+  local agent_name
+  agent_name=$(command -v claude &>/dev/null && echo "claude" || (command -v codex &>/dev/null && echo "codex" || echo "none"))
+  echo "  Agent: ${agent_name}"
+  local tmux_count
+  tmux_count=$(tmux list-sessions 2>/dev/null | grep -c clawforge 2>/dev/null || true)
+  echo "  tmux sessions: ${tmux_count:-0}"
+  echo "  Registry: ${REGISTRY_FILE}"
+  echo ""
+}
+
+# ── Run shortcut (scope + spawn) ──────────────────────────────────────
+run_combined() {
+  # Parse --repo, --branch, --task from args, pass rest to spawn
+  local repo="" branch="" task=""
+  local extra_args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --repo)     repo="$2"; shift 2 ;;
+      --branch)   branch="$2"; shift 2 ;;
+      --task)     task="$2"; shift 2 ;;
+      *)          extra_args+=("$1"); shift ;;
+    esac
+  done
+
+  if [[ -z "$repo" || -z "$branch" || -z "$task" ]]; then
+    echo "Usage: clawforge run --repo <path> --branch <name> --task \"description\"" >&2
+    echo "All three flags are required." >&2
+    exit 1
+  fi
+
+  echo "── Step 1: Scope ─────────────────────────────────────────────"
+  local prompt
+  prompt=$("${BIN_DIR}/scope-task.sh" --task "$task" "${extra_args[@]+"${extra_args[@]}"}" 2>/dev/null || echo "$task")
+
+  echo "── Step 2: Spawn ─────────────────────────────────────────────"
+  "${BIN_DIR}/spawn-agent.sh" --repo "$repo" --branch "$branch" --task "$prompt" "${extra_args[@]+"${extra_args[@]}"}"
+}
+
+# ── Status (pretty wrapper around registry) ────────────────────────────
+show_status() {
+  source "${CLAWFORGE_DIR}/lib/common.sh"
+  local tasks
+  tasks=$(registry_list "$@" 2>/dev/null || echo "[]")
+  local count
+  count=$(echo "$tasks" | jq 'length' 2>/dev/null || echo 0)
+
+  if [[ "$count" == "0" ]]; then
+    echo "No active tasks."
+    return 0
+  fi
+
+  echo "$tasks" | jq -r '.[] | "[\(.status // "?")] \(.id)  \(.agent // "")/\(.model // "")  \(.task // .description // "")[0:60]"' 2>/dev/null || echo "$tasks"
+}
+
+# ── Route subcommand ───────────────────────────────────────────────────
+COMMAND="${1:-help}"
+shift 2>/dev/null || true
+
+case "$COMMAND" in
+  scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;
+  spawn)      exec "${BIN_DIR}/spawn-agent.sh" "$@" ;;
+  status)     show_status "$@" ;;
+  watch)      exec "${BIN_DIR}/check-agents.sh" "$@" ;;
+  review)     exec "${BIN_DIR}/review-pr.sh" "$@" ;;
+  notify)     exec "${BIN_DIR}/notify.sh" "$@" ;;
+  merge)      exec "${BIN_DIR}/merge-helper.sh" "$@" ;;
+  clean)      exec "${BIN_DIR}/clean.sh" "$@" ;;
+  learn)      exec "${BIN_DIR}/learn.sh" "$@" ;;
+  run)        run_combined "$@" ;;
+  dashboard)  show_dashboard "$@" ;;
+  version|-v|--version) show_version ;;
+  help|-h|--help)       show_help ;;
+  *)
+    echo "Unknown command: $COMMAND" >&2
+    echo "Run 'clawforge help' for usage." >&2
+    exit 1
+    ;;
+esac

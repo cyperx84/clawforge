@@ -1,0 +1,17 @@
+{
+  "default_agent": "claude",
+  "default_model_claude": "claude-sonnet-4-5",
+  "default_model_codex": "gpt-5.3-codex",
+  "default_effort": "high",
+  "max_retries": 3,
+  "worktree_base": "../worktrees",
+  "reviewers": ["claude"],
+  "review_prompt": "Review this pull request for:\n1. Bugs and logic errors\n2. Edge cases and error handling\n3. Security issues\n4. Performance concerns\n5. Code quality and conventions\n\nRespond with: APPROVE, REQUEST_CHANGES, or COMMENT. Then list findings.",
+  "vault_path": "/Users/cyperx/Library/Mobile Documents/iCloud~md~obsidian/Documents/cyperx",
+  "vault_max_lines": 2000,
+  "notify": {
+    "builderChannel": "channel:1476433491452498000",
+    "clawChannel": "channel:1476433489791553607",
+    "defaultChannel": "channel:1476433491452498000"
+  }
+}
