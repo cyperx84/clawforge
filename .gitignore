@@ -1,3 +1,13 @@
 registry/active-tasks.json
 registry/learnings.jsonl
 registry/cleanup-log.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.venv/

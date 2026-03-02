@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clawforge"
+version = "0.4.0"
+description = "Multi-mode coding workflow CLI — from quick patches to parallel agent orchestration"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "cyperx84" },
+]
+keywords = ["cli", "agent", "swarm", "workflow", "orchestration"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+]
+
+[project.scripts]
+clawforge = "clawforge.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/cyperx84/clawforge"
+Repository = "https://github.com/cyperx84/clawforge"
+Issues = "https://github.com/cyperx84/clawforge/issues"
+
+[dependency-groups]
+dev = ["pytest>=7.0"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/clawforge/",
+    "bin/",
+    "lib/",
+    "config/",
+    "VERSION",
+    "LICENSE",
+    "README.md",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/clawforge"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"bin" = "clawforge/bin"
+"lib" = "clawforge/lib"
+"config" = "clawforge/config"
+"VERSION" = "clawforge/VERSION"
