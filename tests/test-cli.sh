@@ -49,13 +49,15 @@ assert_ok "--help exits 0" "$CLI" --help
 assert_ok "version exits 0" "$CLI" version
 assert_ok "--version exits 0" "$CLI" --version
 
-# Output content checks
-assert_contains "help shows commands" "Commands:" "$CLI" help
-assert_contains "help shows scope" "scope" "$CLI" help
-assert_contains "help shows spawn" "spawn" "$CLI" help
-assert_contains "help shows run" "run" "$CLI" help
+# Output content checks (v0.4: modes are prominent, modules in --all)
+assert_contains "help shows workflow modes" "Workflow Modes:" "$CLI" help
+assert_contains "help shows sprint" "sprint" "$CLI" help
+assert_contains "help shows review" "review" "$CLI" help
+assert_contains "help shows swarm" "swarm" "$CLI" help
 assert_contains "help shows dashboard" "dashboard" "$CLI" help
 assert_contains "version shows v" "clawforge v" "$CLI" version
+assert_contains "help --all shows scope" "scope" "$CLI" help --all
+assert_contains "help --all shows spawn" "spawn" "$CLI" help --all
 
 # Unknown command fails
 assert_fail "unknown command fails" "$CLI" nonexistent_command
