@@ -19,6 +19,8 @@ Arguments:
 Flags:
   --yes       Skip confirmation prompt
   --clean     Also remove the worktree
+  --version   Show version
+  -v          Show version (alias)
   --help      Show this help
 
 Examples:
@@ -32,6 +34,11 @@ TASK_REF="" YES=false CLEAN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --version|-v)
+      VERSION=$(cat "${SCRIPT_DIR}/../VERSION" 2>/dev/null || echo "unknown")
+      echo "clawforge stop v${VERSION}"
+      exit 0
+      ;;
     --yes)    YES=true; shift ;;
     --clean)  CLEAN=true; shift ;;
     --help|-h) usage; exit 0 ;;
