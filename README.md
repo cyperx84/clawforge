@@ -57,21 +57,67 @@ Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`,
 
 ## Installation
 
-### Homebrew (recommended)
+### Quick Install Matrix
+
+| Method | Command | Best For | Upgrade |
+|--------|---------|----------|---------|
+| **Homebrew** | `brew install cyperx84/tap/clawforge` | macOS/Linux users | `brew upgrade clawforge` |
+| **npm** | `npm install -g clawforge` | Node.js projects | `npm update -g clawforge` |
+| **bun** | `bun install -g clawforge` | Bun users | `bun update -g clawforge` |
+| **uv** | `uv tool install clawforge` | Python developers | `uv tool upgrade clawforge` |
+| **Source** | `./install.sh --openclaw` | Development/OpenClaw | `git pull && ./install.sh --openclaw` |
+
+### Homebrew (recommended for most users)
 
 ```bash
 brew tap cyperx84/tap
 brew install cyperx84/tap/clawforge
 ```
 
-Upgrade later:
+Upgrade:
 
 ```bash
 brew update
 brew upgrade clawforge
 ```
 
-### 30-second source install
+### npm (Node.js)
+
+```bash
+npm install -g clawforge
+```
+
+Upgrade:
+
+```bash
+npm update -g clawforge
+```
+
+### bun
+
+```bash
+bun install -g clawforge
+```
+
+Upgrade:
+
+```bash
+bun update -g clawforge
+```
+
+### uv (Python)
+
+```bash
+uv tool install clawforge
+```
+
+Upgrade:
+
+```bash
+uv tool upgrade clawforge
+```
+
+### Source Install (30 seconds)
 
 ```bash
 git clone https://github.com/cyperx84/clawforge.git
@@ -79,26 +125,26 @@ cd clawforge
 ./install.sh --openclaw
 ```
 
-That command will:
+This will:
 - symlink `clawforge` into `~/.local/bin`
 - wire up `SKILL.md` for OpenClaw
 - create missing directories if needed
 
-### Install modes
+#### Install modes
 
-#### 1) OpenClaw skill mode
+**1) OpenClaw skill mode** (recommended for OpenClaw users)
 
 ```bash
 ./install.sh --openclaw
 ```
 
-#### 2) Standalone CLI mode
+**2) Standalone CLI mode**
 
 ```bash
 ./install.sh --standalone
 ```
 
-#### 3) Custom bin path
+**3) Custom bin path**
 
 ```bash
 ./install.sh --openclaw --bin-dir ~/.bin
