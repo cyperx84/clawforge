@@ -57,7 +57,21 @@ Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`,
 
 ## Installation
 
-### 30-second install (recommended)
+### Homebrew (recommended)
+
+```bash
+brew tap cyperx84/tap
+brew install cyperx84/tap/clawforge
+```
+
+Upgrade later:
+
+```bash
+brew update
+brew upgrade clawforge
+```
+
+### 30-second source install
 
 ```bash
 git clone https://github.com/cyperx84/clawforge.git
