@@ -1,0 +1,25 @@
+# Test files
+tests/
+*.test.sh
+
+# Documentation (except README)
+docs/
+
+# Registry and runtime data
+registry/
+
+# Git files
+.git/
+.gitignore
+.github/
+
+# Development files
+install.sh
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,54 @@
+{
+  "name": "clawforge",
+  "version": "0.4.0",
+  "description": "Multi-mode coding workflow CLI — from quick patches to parallel agent orchestration with Claude Code and Codex",
+  "license": "MIT",
+  "author": "cyperx84",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cyperx84/clawforge.git"
+  },
+  "homepage": "https://github.com/cyperx84/clawforge#readme",
+  "bugs": {
+    "url": "https://github.com/cyperx84/clawforge/issues"
+  },
+  "keywords": [
+    "cli",
+    "agent",
+    "claude",
+    "codex",
+    "workflow",
+    "automation",
+    "tmux",
+    "git",
+    "ai-coding",
+    "swarm",
+    "openclaw"
+  ],
+  "bin": {
+    "clawforge": "bin/clawforge"
+  },
+  "files": [
+    "bin/**/*",
+    "lib/**/*",
+    "config/**/*",
+    "VERSION",
+    "LICENSE",
+    "README.md",
+    "SKILL.md"
+  ],
+  "scripts": {
+    "test": "tests/run-all-tests.sh",
+    "validate": "bash -n bin/clawforge && echo '✓ Syntax validation passed'",
+    "prepack": "npm run validate",
+    "postinstall": "echo '✓ ClawForge installed. Run: clawforge help'"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "preferGlobal": true
+}
