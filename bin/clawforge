@@ -53,7 +53,12 @@ Management:
   steer       Send course correction to a running agent
   stop        Stop a running agent
   watch       Monitor agent health (supports --daemon)
-  dashboard   Pretty-print overview + system health
+  dashboard   Live TUI dashboard with vim keybindings
+
+Observability (v0.5):
+  cost        Token/cost tracking and budget management
+  conflicts   Swarm conflict detection and resolution
+  templates   Task template management
 
 Lifecycle:
   clean       Clean up completed tasks
@@ -84,127 +89,18 @@ Global flags:
 Examples:
   clawforge sprint "Add JWT authentication middleware"
   clawforge sprint "Fix typo in readme" --quick
+  clawforge sprint --template refactor "Refactor auth module"
   clawforge review --pr 42
   clawforge swarm "Migrate all tests from jest to vitest"
+  clawforge swarm --template migration "Migrate to TypeScript" --ci-loop
   clawforge steer 1 "Use bcrypt instead of md5"
-  clawforge status
+  clawforge dashboard
+  clawforge cost --summary
+  clawforge templates
 EOF
 }
 
-# ── Dashboard ──────────────────────────────────────────────────────────
-show_dashboard() {
-  source "${CLAWFORGE_DIR}/lib/common.sh"
-  echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║                   clawforge dashboard                       ║"
-  echo "╚══════════════════════════════════════════════════════════════╝"
-  echo ""
-
-  # Active tasks with short IDs and mode
-  echo "── Active Tasks ──────────────────────────────────────────────"
-  local tasks
-  tasks=$(registry_list 2>/dev/null || echo "[]")
-  local count
-  count=$(echo "$tasks" | jq 'length' 2>/dev/null || echo 0)
-  if [[ "$count" == "0" ]]; then
-    echo "  No active tasks."
-  else
-    echo "$tasks" | jq -r '.[] |
-      def sid: if .short_id then "#\(.short_id)" else .id end;
-      def mode: .mode // "—";
-      "  \(sid)  \(mode)  [\(.status // "unknown")]  \(.description // "no description")[0:55]"
-    ' 2>/dev/null || echo "  (error reading tasks)"
-  fi
-  echo ""
-
-  # Status summary
-  echo "── Status Summary ────────────────────────────────────────────"
-  for s in spawned running pr-created ci-passing reviewing done failed stopped; do
-    local n
-    n=$(echo "$tasks" | jq --arg s "$s" '[.[] | select(.status == $s)] | length' 2>/dev/null || echo 0)
-    [[ "$n" != "0" ]] && echo "  ${s}: ${n}"
-  done
-  echo ""
-
-  # Mode breakdown
-  echo "── Mode Breakdown ────────────────────────────────────────────"
-  for m in sprint quick review swarm; do
-    local n
-    n=$(echo "$tasks" | jq --arg m "$m" '[.[] | select(.mode == $m)] | length' 2>/dev/null || echo 0)
-    [[ "$n" != "0" ]] && echo "  ${m}: ${n}"
-  done
-  echo ""
-
-  # Recent learnings
-  local learnings_file="${CLAWFORGE_DIR}/registry/learnings.jsonl"
-  if [[ -f "$learnings_file" ]] && [[ -s "$learnings_file" ]]; then
-    echo "── Recent Learnings ──────────────────────────────────────────"
-    tail -5 "$learnings_file" | while IFS= read -r line; do
-      local ts summary
-      ts=$(echo "$line" | jq -r '.timestamp // .ts // ""' 2>/dev/null | cut -c1-10)
-      summary=$(echo "$line" | jq -r '.summary // .notes // "(no summary)"' 2>/dev/null | head -c 70)
-      echo "  [${ts}] ${summary}"
-    done
-    echo ""
-  fi
-
-  # System health
-  echo "── System Health ─────────────────────────────────────────────"
-  local agent_name
-  agent_name=$(command -v claude &>/dev/null && echo "claude" || (command -v codex &>/dev/null && echo "codex" || echo "none"))
-  echo "  Agent: ${agent_name}"
-  local tmux_count
-  tmux_count=$(tmux list-sessions 2>/dev/null | grep -c agent 2>/dev/null || echo "0")
-  echo "  Agent tmux sessions: ${tmux_count:-0}"
-
-  # RAM estimate (~2GB per agent)
-  local running_agents
-  running_agents=$(echo "$tasks" | jq '[.[] | select(.status == "running" or .status == "spawned")] | length' 2>/dev/null || echo 0)
-  if [[ "$running_agents" -gt 0 ]]; then
-    local est_ram=$((running_agents * 2))
-    echo "  Estimated RAM usage: ~${est_ram}GB (${running_agents} agents x ~2GB)"
-  fi
-
-  # Disk usage of worktrees
-  local worktree_base
-  worktree_base=$(config_get worktree_base "../worktrees")
-  if [[ -d "$worktree_base" ]]; then
-    local disk_usage
-    disk_usage=$(du -sh "$worktree_base" 2>/dev/null | cut -f1 || echo "unknown")
-    echo "  Worktree disk: ${disk_usage}"
-  fi
-
-  # Daemon status
-  local pid_file="${CLAWFORGE_DIR}/watch.pid"
-  if [[ -f "$pid_file" ]]; then
-    local daemon_pid
-    daemon_pid=$(cat "$pid_file")
-    if kill -0 "$daemon_pid" 2>/dev/null; then
-      echo "  Watch daemon: running (PID: $daemon_pid)"
-    else
-      echo "  Watch daemon: stale PID file (not running)"
-    fi
-  else
-    echo "  Watch daemon: not running"
-  fi
-
-  echo "  Registry: ${REGISTRY_FILE}"
-  echo ""
-
-  # Conflict warnings (swarm)
-  local conflicts
-  conflicts=$(echo "$tasks" | jq -r '
-    [.[] | select(.status == "running" and (.files_touched | length) > 0) | {id, files: .files_touched}] |
-    if length > 1 then
-      [combinations(2) | select(.[0].files as $a | .[1].files as $b | ($a - ($a - $b)) | length > 0) |
-        "  Warning: \(.[0].id) and \(.[1].id) touch overlapping files"]
-    else [] end | .[]
-  ' 2>/dev/null || true)
-  if [[ -n "$conflicts" ]]; then
-    echo "── Conflict Warnings ─────────────────────────────────────────"
-    echo "$conflicts"
-    echo ""
-  fi
-}
+# ── Dashboard (v0.5: routes to TUI, legacy fallback kept as show_dashboard_legacy) ─
 
 # ── Run shortcut (scope + spawn) ──────────────────────────────────────
 run_combined() {
@@ -279,9 +175,14 @@ case "$COMMAND" in
   # Existing commands
   status)     show_status "$@" ;;
   watch)      exec "${BIN_DIR}/check-agents.sh" "$@" ;;
-  dashboard)  show_dashboard "$@" ;;
+  dashboard)  exec "${BIN_DIR}/dashboard.sh" "$@" ;;
   clean)      exec "${BIN_DIR}/clean.sh" "$@" ;;
   learn)      exec "${BIN_DIR}/learn.sh" "$@" ;;
+
+  # v0.5 observability + intelligence
+  cost)       exec "${BIN_DIR}/cost.sh" "$@" ;;
+  conflicts)  exec "${BIN_DIR}/conflicts.sh" "$@" ;;
+  templates)  exec "${BIN_DIR}/templates.sh" "$@" ;;
 
   # Direct module access (hidden from main help)
   scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;

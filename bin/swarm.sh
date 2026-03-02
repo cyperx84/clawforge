@@ -21,6 +21,13 @@ Flags:
   --max-agents <N>     Cap parallel agents (default: 3)
   --agent <name>       Force specific agent for all sub-tasks
   --auto-merge         Merge each PR automatically after CI + review
+  --template <name>    Apply a task template
+  --ci-loop            Enable CI auto-fix feedback loop
+  --max-ci-retries <N> Max CI auto-fix retries (default: 3)
+  --budget <dollars>   Kill agents if total cost exceeds budget
+  --json               Output structured JSON
+  --notify             Send OpenClaw event on completion
+  --webhook <url>      POST completion payload to URL
   --dry-run            Show decomposition plan without spawning
   --yes                Skip RAM confirmation prompt
   --help               Show this help
@@ -28,25 +35,53 @@ Flags:
 Examples:
   clawforge swarm "Migrate all tests from jest to vitest"
   clawforge swarm "Add i18n to all user-facing strings" --max-agents 4
+  clawforge swarm --template migration "Migrate to TypeScript"
 EOF
 }
 
 # ── Parse args ────────────────────────────────────────────────────────
 REPO="" TASK="" MAX_AGENTS=3 AGENT="" AUTO_MERGE=false DRY_RUN=false SKIP_CONFIRM=false
+TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK=""
 POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --max-agents) MAX_AGENTS="$2"; shift 2 ;;
-    --agent)      AGENT="$2"; shift 2 ;;
-    --auto-merge) AUTO_MERGE=true; shift ;;
-    --dry-run)    DRY_RUN=true; shift ;;
-    --yes)        SKIP_CONFIRM=true; shift ;;
-    --help|-h)    usage; exit 0 ;;
-    --*)          log_error "Unknown option: $1"; usage; exit 1 ;;
-    *)            POSITIONAL+=("$1"); shift ;;
+    --max-agents)     MAX_AGENTS="$2"; shift 2 ;;
+    --agent)          AGENT="$2"; shift 2 ;;
+    --auto-merge)     AUTO_MERGE=true; shift ;;
+    --template)       TEMPLATE="$2"; shift 2 ;;
+    --ci-loop)        CI_LOOP=true; shift ;;
+    --max-ci-retries) MAX_CI_RETRIES="$2"; shift 2 ;;
+    --budget)         BUDGET="$2"; shift 2 ;;
+    --json)           JSON_OUTPUT=true; shift ;;
+    --notify)         NOTIFY=true; shift ;;
+    --webhook)        WEBHOOK="$2"; shift 2 ;;
+    --dry-run)        DRY_RUN=true; shift ;;
+    --yes)            SKIP_CONFIRM=true; shift ;;
+    --help|-h)        usage; exit 0 ;;
+    --*)              log_error "Unknown option: $1"; usage; exit 1 ;;
+    *)                POSITIONAL+=("$1"); shift ;;
   esac
 done
+
+# ── Apply template (template < CLI flags) ─────────────────────────────
+if [[ -n "$TEMPLATE" ]]; then
+  TMPL_FILE=""
+  if [[ -f "${CLAWFORGE_DIR}/lib/templates/${TEMPLATE}.json" ]]; then
+    TMPL_FILE="${CLAWFORGE_DIR}/lib/templates/${TEMPLATE}.json"
+  elif [[ -f "${HOME}/.clawforge/templates/${TEMPLATE}.json" ]]; then
+    TMPL_FILE="${HOME}/.clawforge/templates/${TEMPLATE}.json"
+  else
+    log_error "Template '$TEMPLATE' not found"; exit 1
+  fi
+  log_info "Applying template: $TEMPLATE"
+  TMPL_MAX_AGENTS=$(jq -r '.maxAgents // empty' "$TMPL_FILE" 2>/dev/null || true)
+  TMPL_AUTO_MERGE=$(jq -r '.autoMerge // false' "$TMPL_FILE")
+  TMPL_CI_LOOP=$(jq -r '.ciLoop // false' "$TMPL_FILE")
+  [[ -n "$TMPL_MAX_AGENTS" ]] && MAX_AGENTS="$TMPL_MAX_AGENTS"
+  [[ "$TMPL_AUTO_MERGE" == "true" ]] && AUTO_MERGE=true
+  [[ "$TMPL_CI_LOOP" == "true" ]] && CI_LOOP=true
+fi
 
 # Parse positional args: [repo] "<task>"
 case ${#POSITIONAL[@]} in
@@ -160,6 +195,9 @@ PARENT_JSON=$(jq -n \
   }')
 registry_add "$PARENT_JSON"
 $AUTO_MERGE && registry_update "$PARENT_ID" "auto_merge" 'true'
+$CI_LOOP && registry_update "$PARENT_ID" "ci_loop" 'true'
+registry_update "$PARENT_ID" "max_ci_retries" "$MAX_CI_RETRIES"
+[[ -n "$BUDGET" ]] && registry_update "$PARENT_ID" "budget" "$BUDGET"
 
 # ── Dry-run output ────────────────────────────────────────────────────
 if $DRY_RUN; then
@@ -212,10 +250,46 @@ done
 # ── Notify ────────────────────────────────────────────────────────────
 "${SCRIPT_DIR}/notify.sh" --type task-started --description "Swarm: $TASK ($SUB_TASK_COUNT agents)" --dry-run 2>/dev/null || true
 
-echo ""
-echo "  All $SUB_TASK_COUNT agents spawned."
-echo "  Status: clawforge status"
-echo "  Attach: clawforge attach ${PARENT_SHORT_ID}.N  (where N is the agent number)"
-echo "  Steer:  clawforge steer ${PARENT_SHORT_ID}.N \"<message>\""
-echo ""
-echo "  Tip: Run 'clawforge watch --daemon' in another pane for auto-monitoring"
+# ── OpenClaw notify ──────────────────────────────────────────────────
+if $NOTIFY; then
+  openclaw system event --text "ClawForge: swarm started — $TASK (#$PARENT_SHORT_ID, $SUB_TASK_COUNT agents)" --mode now 2>/dev/null || true
+fi
+
+# ── Webhook ──────────────────────────────────────────────────────────
+if [[ -n "$WEBHOOK" ]]; then
+  PAYLOAD=$(jq -cn \
+    --arg taskId "$PARENT_ID" \
+    --argjson shortId "$PARENT_SHORT_ID" \
+    --arg mode "swarm" \
+    --arg status "running" \
+    --argjson subTaskCount "$SUB_TASK_COUNT" \
+    --arg description "$TASK" \
+    --arg repo "$REPO_ABS" \
+    '{taskId: $taskId, shortId: $shortId, mode: $mode, status: $status, subTaskCount: $subTaskCount, description: $description, repo: $repo}')
+  curl -s -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK" >/dev/null 2>&1 || log_warn "Webhook POST failed"
+fi
+
+# ── Output ────────────────────────────────────────────────────────────
+if $JSON_OUTPUT; then
+  jq -cn \
+    --arg taskId "$PARENT_ID" \
+    --argjson shortId "$PARENT_SHORT_ID" \
+    --arg mode "swarm" \
+    --arg status "running" \
+    --argjson subTaskCount "$SUB_TASK_COUNT" \
+    --arg description "$TASK" \
+    --arg repo "$REPO_ABS" \
+    --argjson autoMerge "$AUTO_MERGE" \
+    --argjson ciLoop "$CI_LOOP" \
+    '{taskId: $taskId, shortId: $shortId, mode: $mode, status: $status, subTaskCount: $subTaskCount, description: $description, repo: $repo, autoMerge: $autoMerge, ciLoop: $ciLoop}'
+else
+  echo ""
+  echo "  All $SUB_TASK_COUNT agents spawned."
+  echo "  Status: clawforge status"
+  echo "  Attach: clawforge attach ${PARENT_SHORT_ID}.N  (where N is the agent number)"
+  echo "  Steer:  clawforge steer ${PARENT_SHORT_ID}.N \"<message>\""
+  echo ""
+  $CI_LOOP && echo "  CI feedback loop: enabled (max retries: $MAX_CI_RETRIES)"
+  [[ -n "$BUDGET" ]] && echo "  Budget cap: \$$BUDGET"
+  echo "  Tip: Run 'clawforge watch --daemon' in another pane for auto-monitoring"
+fi

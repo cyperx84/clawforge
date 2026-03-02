@@ -64,7 +64,9 @@ _ci_feedback() {
   local ci_retries ci_limit
 
   ci_retries=$(registry_get "$id" | jq -r '.ci_retries // 0')
-  ci_limit=$(config_get ci_retry_limit 2)
+  # Use per-task max_ci_retries if set, otherwise fall back to config
+  ci_limit=$(registry_get "$id" | jq -r '.max_ci_retries // empty' 2>/dev/null || true)
+  [[ -z "$ci_limit" ]] && ci_limit=$(config_get ci_retry_limit 2)
 
   if [[ "$ci_retries" -ge "$ci_limit" ]]; then
     log_warn "CI retry limit reached for $id ($ci_retries/$ci_limit)"

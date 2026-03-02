@@ -1,0 +1,6 @@
+{
+  "mode": "sprint",
+  "quick": true,
+  "autoMerge": true,
+  "description": "Quick bugfix: sprint with auto-merge, skip review"
+}

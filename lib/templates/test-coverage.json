@@ -1,0 +1,6 @@
+{
+  "mode": "swarm",
+  "maxAgents": 3,
+  "autoMerge": true,
+  "description": "Boost test coverage: parallel agents adding tests across modules"
+}
