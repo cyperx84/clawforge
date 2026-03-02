@@ -1,6 +1,15 @@
 # ClawForge
 
-Multi-mode coding workflow CLI — from quick patches to parallel agent orchestration with Claude Code and Codex.
+```text
+   ________                ______
+  / ____/ /___ __      __ / ____/___  _________ ____
+ / /   / / __ `/ | /| / // /_  / __ \/ ___/ __ `/ _ \
+/ /___/ / /_/ /| |/ |/ // __/ / /_/ / /  / /_/ /  __/
+\____/_/\__,_/ |__/|__//_/    \____/_/   \__, /\___/
+                                         /____/
+```
+
+**Multi-mode coding workflow CLI** — from quick patches to parallel agent orchestration with Claude Code and Codex.
 
 ## Inspired By
 
@@ -48,22 +57,56 @@ Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`,
 
 ## Installation
 
-### As an OpenClaw Skill (recommended)
-
-```bash
-git clone https://github.com/cyperx84/clawforge.git ~/.openclaw/workspace/clawforge
-mkdir -p ~/.openclaw/skills/clawforge
-ln -sf ~/.openclaw/workspace/clawforge/SKILL.md ~/.openclaw/skills/clawforge/SKILL.md
-ln -sf ~/.openclaw/workspace/clawforge/bin/clawforge ~/.local/bin/clawforge
-```
-
-### Standalone CLI
+### 30-second install (recommended)
 
 ```bash
 git clone https://github.com/cyperx84/clawforge.git
 cd clawforge
+./install.sh --openclaw
+```
+
+That command will:
+- symlink `clawforge` into `~/.local/bin`
+- wire up `SKILL.md` for OpenClaw
+- create missing directories if needed
+
+### Install modes
+
+#### 1) OpenClaw skill mode
+
+```bash
+./install.sh --openclaw
+```
+
+#### 2) Standalone CLI mode
+
+```bash
+./install.sh --standalone
+```
+
+#### 3) Custom bin path
+
+```bash
+./install.sh --openclaw --bin-dir ~/.bin
+```
+
+### Manual install (if you prefer explicit symlinks)
+
+```bash
+mkdir -p ~/.local/bin
 ln -sf "$(pwd)/bin/clawforge" ~/.local/bin/clawforge
+
+# Optional OpenClaw skill wiring
+mkdir -p ~/.openclaw/skills/clawforge/scripts
+ln -sf "$(pwd)/SKILL.md" ~/.openclaw/skills/clawforge/SKILL.md
+ln -sf "$(pwd)/bin/clawforge" ~/.openclaw/skills/clawforge/scripts/clawforge
+```
+
+### Verify install
+
+```bash
 clawforge version
+clawforge help
 ```
 
 ### Prerequisites
