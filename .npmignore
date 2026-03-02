@@ -1,0 +1,19 @@
+# Tests
+tests/
+
+# Implementation docs (internal)
+docs/IMPLEMENTATION*
+docs/PRD*
+
+# Git & CI
+.git*
+.github/
+
+# Registry runtime data
+registry/
+*.pid
+
+# Development files
+.claude/
+.openclaw/
+*.log
