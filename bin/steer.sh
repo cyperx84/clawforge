@@ -30,6 +30,17 @@ if [[ $# -lt 1 ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
   [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && exit 0 || exit 1
 fi
 
+if [[ "${1:-}" == "--version" ]] || [[ "${1:-}" == "-v" ]]; then
+  VERSION_FILE="${SCRIPT_DIR}/../VERSION"
+  if [[ -f "$VERSION_FILE" ]]; then
+    cat "$VERSION_FILE"
+  else
+    echo "Version file not found"
+    exit 1
+  fi
+  exit 0
+fi
+
 TASK_REF="$1"
 shift
 
