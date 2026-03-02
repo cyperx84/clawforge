@@ -1,6 +1,6 @@
-# 🔨 ClawForge
+# ClawForge
 
-Agent swarm workflow for OpenClaw — spawn, monitor, review, and manage coding agents (Claude Code, Codex) on git worktrees with tmux sessions.
+Multi-mode coding workflow CLI — from quick patches to parallel agent orchestration with Claude Code and Codex.
 
 ## Inspired By
 
@@ -8,50 +8,42 @@ This project was inspired by [Elvis's "OpenClaw + Codex/Claude Code Agent Swarm"
 
 ## What It Does
 
-ClawForge manages the full lifecycle of coding agent tasks:
+ClawForge manages coding agents running in tmux sessions on isolated git worktrees. Three workflow modes match task complexity:
 
-1. **Scope** a task with rich context (PRDs, vault notes, code)
-2. **Spawn** a coding agent on an isolated git worktree in tmux
-3. **Track** everything in a JSON registry
-4. **Watch** agent health, auto-respawn failures
-5. **Review** PRs with multi-model code review
-6. **Notify** humans via Discord
-7. **Merge** with CI and review safety checks
-8. **Clean** up worktrees, sessions, registry entries
-9. **Learn** from results to improve future tasks
+| Mode | Use Case | Agents |
+|------|----------|--------|
+| **Sprint** | Single task, full dev cycle | 1 |
+| **Review** | Quality gate on existing PR | 0 (analysis only) |
+| **Swarm** | Parallel orchestration | N (decomposed) |
+
+Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard`.
 
 ## Architecture
 
 ```
-                          clawforge CLI
-                              │
-              ┌───────────────┼───────────────┐
-              │               │               │
-          Shortcuts       Commands         Meta
-          ┌─────┐    ┌──────────────┐    ┌──────┐
-          │ run  │    │ scope  spawn │    │ help │
-          │ dash │    │ status watch │    │ ver  │
-          └─────┘    │ review notify│    └──────┘
-                     │ merge  clean │
-                     │ learn        │
-                     └──────┬───────┘
+                        clawforge CLI
                             │
-              ┌─────────────┼─────────────┐
-              │             │             │
-          bin/*.sh    lib/common.sh   config/defaults.json
-              │             │
-              │       ┌─────┴─────┐
-              │       │ Registry  │
-              │       │ (JSON)    │
-              │       └───────────┘
-              │
-    ┌─────────┼─────────┐
-    │         │         │
-  tmux    git worktree  gh CLI
-  sessions  (isolated)  (PRs/CI)
-    │
-  coding agents
-  (claude / codex)
+            ┌───────────────┼───────────────┐
+            │               │               │
+       Workflow Modes   Management       Direct Access
+       ┌───────────┐   ┌──────────┐    ┌──────────────┐
+       │ sprint    │   │ status   │    │ scope  spawn │
+       │ review    │   │ attach   │    │ notify merge │
+       │ swarm     │   │ steer    │    │ clean  learn │
+       └─────┬─────┘   │ stop    │    └──────────────┘
+             │         │ watch    │
+             │         │ dashboard│
+             │         └────┬─────┘
+             │              │
+             └──────┬───────┘
+                    │
+          ┌─────────┼─────────┐
+          │         │         │
+        tmux    git worktree  gh CLI
+        sessions  (isolated)  (PRs/CI)
+          │
+        coding agents
+        (claude / codex)
 ```
 
 ## Installation
@@ -82,37 +74,90 @@ clawforge version
 
 ## Quick Start
 
+### Sprint — the workhorse
+
 ```bash
-# The one-liner — scope + spawn in one step
-clawforge run --repo ~/github/myapp --branch feat/auth --task "Add JWT auth"
+# Single agent, full dev cycle (auto-detects repo from cwd)
+clawforge sprint "Add JWT authentication middleware"
 
-# Check what's running
-clawforge dashboard
+# Quick patch mode — auto-merge, skip review
+clawforge sprint "Fix typo in readme" --quick
 
-# After the agent creates a PR
-clawforge review --repo ~/github/myapp --pr 42
-clawforge merge --repo ~/github/myapp --pr 42 --squash
-clawforge clean --all-done
-clawforge learn --task-id <id> --auto --memory
+# With explicit options
+clawforge sprint ~/github/api "Fix null pointer" --branch fix/null-ptr --agent codex
+```
+
+### Review — quality gate
+
+```bash
+clawforge review --pr 42
+clawforge review --pr 42 --fix               # Spawn agent to fix issues
+clawforge review --pr 42 --reviewers claude,gemini,codex
+```
+
+### Swarm — parallel agents
+
+```bash
+clawforge swarm "Migrate all tests from jest to vitest"
+clawforge swarm "Add i18n to all strings" --max-agents 4
+```
+
+### Monitor & Manage
+
+```bash
+clawforge status                   # Short IDs: #1, #2, #3
+clawforge attach 1                 # Attach to agent tmux session
+clawforge steer 1 "Use bcrypt"    # Course-correct running agent
+clawforge steer 3.2 "Skip legacy" # Steer sub-agent 2 of swarm task 3
+clawforge stop 1 --yes            # Stop agent
+clawforge watch --daemon           # Background monitoring + CI feedback
+clawforge dashboard                # Full overview + system health
 ```
 
 ## Commands
 
+### Workflow Modes
+
 | Command | Description | Key Flags |
 |---------|-------------|-----------|
-| `scope` | Assemble prompt with context | `--task`, `--prd`, `--vault-query`, `--context` |
-| `spawn` | Create worktree + launch agent | `--repo`, `--branch`, `--task`, `--agent`, `--model` |
-| `status` | Show all tracked tasks | `--status` |
-| `watch` | Health-check all agents | `--json`, `--dry-run` |
-| `review` | Multi-model code review | `--repo`, `--pr`, `--reviewers` |
-| `notify` | Send Discord notification | `--type`, `--task-id`, `--message` |
-| `merge` | Merge PR with safety checks | `--repo`, `--pr`, `--auto`, `--squash` |
-| `clean` | Clean up completed tasks | `--task-id`, `--all-done`, `--stale-days` |
-| `learn` | Record learnings | `--task-id`, `--auto`, `--notes`, `--memory` |
-| `run` | Scope + spawn in one step | `--repo`, `--branch`, `--task` |
-| `dashboard` | Pretty overview of everything | (none) |
+| `sprint` | Single agent, full dev cycle | `--quick`, `--branch`, `--agent`, `--auto-merge`, `--dry-run` |
+| `review` | Quality gate on existing PR | `--pr`, `--fix`, `--reviewers`, `--dry-run` |
+| `swarm` | Parallel multi-agent orchestration | `--max-agents`, `--agent`, `--auto-merge`, `--dry-run` |
+
+### Management
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `status` | Show tracked tasks with short IDs | `--status` |
+| `attach` | Attach to agent tmux session | (task ID) |
+| `steer` | Course-correct running agent | (task ID, message) |
+| `stop` | Stop a running agent | `--yes`, `--clean` |
+| `watch` | Monitor agent health | `--daemon`, `--stop`, `--json`, `--interval` |
+| `dashboard` | Overview + system health | (none) |
+| `clean` | Clean up completed tasks | `--all-done`, `--stale-days`, `--dry-run` |
+| `learn` | Record learnings | `--auto`, `--notes`, `--memory` |
+
+### Direct Module Access (via `clawforge help --all`)
+
+| Command | Description |
+|---------|-------------|
+| `scope` | Assemble prompt with context |
+| `spawn` | Create worktree + launch agent |
+| `notify` | Send Discord notification |
+| `merge` | Merge PR with safety checks |
+| `run` | Scope + spawn in one step (legacy) |
 
 **Global flag:** `--verbose` enables debug logging for any command.
+
+## Smart Behaviors
+
+- **Auto-repo detection** — No `--repo` needed if you're in a git repo
+- **Auto-branch naming** — `sprint/<slug>`, `quick/<slug>`, `swarm/<slug>` with collision detection
+- **Short task IDs** — `#1`, `3.2` instead of full slugs
+- **CI feedback loop** — Watch detects CI failure, auto-steers agent with error context (up to 2 retries)
+- **Escalation suggestions** — Quick mode detects complex tasks, suggests full sprint
+- **Conflict detection** — Dashboard warns when swarm agents touch overlapping files
+- **RAM warnings** — Prompts when spawning >3 agents
 
 ## Configuration
 
@@ -123,9 +168,10 @@ Edit `config/defaults.json`:
   "default_agent": "claude",
   "default_model_claude": "claude-sonnet-4-5",
   "default_model_codex": "gpt-5.3-codex",
-  "default_effort": "high",
-  "max_retries": 3,
-  "reviewers": ["claude"],
+  "ci_retry_limit": 2,
+  "ram_warn_threshold": 3,
+  "reviewers": ["claude", "gemini"],
+  "auto_simplify": true,
   "notify": {
     "defaultChannel": "channel:..."
   }

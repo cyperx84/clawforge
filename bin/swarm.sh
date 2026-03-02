@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+# swarm.sh — Swarm mode: parallel multi-agent orchestration
+# Usage: clawforge swarm [repo] "<task>" [flags]
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/../lib/common.sh"
+
+# ── Help ───────────────────────────────────────────────────────────────
+usage() {
+  cat <<EOF
+Usage: clawforge swarm [repo] "<task>" [flags]
+
+Parallel multi-agent orchestration. Decomposes task, spawns N agents, coordinates.
+
+Arguments:
+  [repo]               Path to git repository (default: auto-detect from cwd)
+  "<task>"             Task description (required)
+
+Flags:
+  --max-agents <N>     Cap parallel agents (default: 3)
+  --agent <name>       Force specific agent for all sub-tasks
+  --auto-merge         Merge each PR automatically after CI + review
+  --dry-run            Show decomposition plan without spawning
+  --yes                Skip RAM confirmation prompt
+  --help               Show this help
+
+Examples:
+  clawforge swarm "Migrate all tests from jest to vitest"
+  clawforge swarm "Add i18n to all user-facing strings" --max-agents 4
+EOF
+}
+
+# ── Parse args ────────────────────────────────────────────────────────
+REPO="" TASK="" MAX_AGENTS=3 AGENT="" AUTO_MERGE=false DRY_RUN=false SKIP_CONFIRM=false
+POSITIONAL=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --max-agents) MAX_AGENTS="$2"; shift 2 ;;
+    --agent)      AGENT="$2"; shift 2 ;;
+    --auto-merge) AUTO_MERGE=true; shift ;;
+    --dry-run)    DRY_RUN=true; shift ;;
+    --yes)        SKIP_CONFIRM=true; shift ;;
+    --help|-h)    usage; exit 0 ;;
+    --*)          log_error "Unknown option: $1"; usage; exit 1 ;;
+    *)            POSITIONAL+=("$1"); shift ;;
+  esac
+done
+
+# Parse positional args: [repo] "<task>"
+case ${#POSITIONAL[@]} in
+  0) log_error "Task description is required"; usage; exit 1 ;;
+  1) TASK="${POSITIONAL[0]}" ;;
+  2) REPO="${POSITIONAL[0]}"; TASK="${POSITIONAL[1]}" ;;
+  *) log_error "Too many positional arguments"; usage; exit 1 ;;
+esac
+
+# ── Resolve repo ──────────────────────────────────────────────────────
+if [[ -z "$REPO" ]]; then
+  REPO=$(detect_repo) || { log_error "No --repo and no git repo found from cwd"; exit 1; }
+fi
+REPO_ABS=$(cd "$REPO" && pwd)
+
+# ── Resolve agent ─────────────────────────────────────────────────────
+RESOLVED_AGENT=$(detect_agent "${AGENT:-}")
+if [[ "$RESOLVED_AGENT" == "claude" ]]; then
+  MODEL=$(config_get default_model_claude "claude-sonnet-4-5")
+else
+  MODEL=$(config_get default_model_codex "gpt-5.3-codex")
+fi
+
+# ── RAM warning ───────────────────────────────────────────────────────
+RAM_THRESHOLD=$(config_get ram_warn_threshold 3)
+if [[ "$MAX_AGENTS" -gt "$RAM_THRESHOLD" ]] && ! $SKIP_CONFIRM && ! $DRY_RUN; then
+  ESTIMATED_RAM=$((MAX_AGENTS * 2))
+  echo ""
+  echo "  Warning: $MAX_AGENTS agents will use ~${ESTIMATED_RAM}GB RAM (estimated). Continue? [Y/n]"
+  read -r confirm
+  if [[ "$confirm" =~ ^[nN] ]]; then
+    echo "Aborted."
+    exit 0
+  fi
+fi
+
+# ── Step 1: Decompose task ────────────────────────────────────────────
+log_info "Swarm mode: decomposing task into sub-tasks..."
+log_info "Max agents: $MAX_AGENTS"
+
+# Use Claude to decompose the task into sub-tasks
+DECOMPOSE_PROMPT="Decompose this coding task into ${MAX_AGENTS} or fewer independent sub-tasks that can be worked on in parallel by separate coding agents. Each sub-task should be self-contained and not depend on others.
+
+Task: ${TASK}
+
+Respond with ONLY a JSON array of sub-task descriptions. Example:
+[\"Sub-task 1 description\", \"Sub-task 2 description\", \"Sub-task 3 description\"]"
+
+# Try to decompose using agent, fall back to splitting by sentence
+SUB_TASKS="[]"
+if command -v claude &>/dev/null && ! $DRY_RUN; then
+  DECOMPOSED=$(claude --model "$MODEL" -p "$DECOMPOSE_PROMPT" 2>/dev/null || true)
+  # Try to extract JSON array from response
+  if echo "$DECOMPOSED" | jq -e 'type == "array"' >/dev/null 2>&1; then
+    SUB_TASKS="$DECOMPOSED"
+  elif echo "$DECOMPOSED" | grep -o '\[.*\]' | jq -e 'type == "array"' >/dev/null 2>&1; then
+    SUB_TASKS=$(echo "$DECOMPOSED" | grep -o '\[.*\]' | head -1)
+  else
+    # Fallback: treat the whole task as one sub-task
+    SUB_TASKS=$(jq -n --arg t "$TASK" '[$t]')
+  fi
+else
+  # Dry-run or no agent: create placeholder sub-tasks
+  SUB_TASKS=$(jq -n --arg t "$TASK" --argjson n "$MAX_AGENTS" \
+    '[range($n) | "\($t) (part \(. + 1))"]')
+fi
+
+# Cap to max-agents
+SUB_TASK_COUNT=$(echo "$SUB_TASKS" | jq 'length')
+if [[ "$SUB_TASK_COUNT" -gt "$MAX_AGENTS" ]]; then
+  SUB_TASKS=$(echo "$SUB_TASKS" | jq --argjson n "$MAX_AGENTS" '.[0:$n]')
+  SUB_TASK_COUNT=$MAX_AGENTS
+fi
+
+# ── Assign parent short ID ───────────────────────────────────────────
+PARENT_SHORT_ID=$(_next_short_id)
+PARENT_ID="swarm-$(slugify_task "$TASK" 30)"
+
+# ── Register parent task ─────────────────────────────────────────────
+NOW=$(epoch_ms)
+PARENT_JSON=$(jq -n \
+  --arg id "$PARENT_ID" \
+  --argjson sid "$PARENT_SHORT_ID" \
+  --arg desc "$TASK" \
+  --arg repo "$REPO_ABS" \
+  --argjson started "$NOW" \
+  --argjson subcount "$SUB_TASK_COUNT" \
+  '{
+    id: $id,
+    short_id: $sid,
+    mode: "swarm",
+    tmuxSession: "",
+    agent: "multi",
+    model: "multi",
+    description: $desc,
+    repo: $repo,
+    worktree: "",
+    branch: "",
+    startedAt: $started,
+    status: "running",
+    retries: 0,
+    maxRetries: 0,
+    pr: null,
+    checks: {},
+    completedAt: null,
+    note: null,
+    files_touched: [],
+    ci_retries: 0,
+    sub_task_count: $subcount,
+    auto_merge: false
+  }')
+registry_add "$PARENT_JSON"
+$AUTO_MERGE && registry_update "$PARENT_ID" "auto_merge" 'true'
+
+# ── Dry-run output ────────────────────────────────────────────────────
+if $DRY_RUN; then
+  echo "=== Swarm Dry Run ==="
+  echo "  Task:       $TASK"
+  echo "  Repo:       $REPO_ABS"
+  echo "  Agent:      $RESOLVED_AGENT ($MODEL)"
+  echo "  Short ID:   #$PARENT_SHORT_ID"
+  echo "  Sub-tasks:  $SUB_TASK_COUNT"
+  echo "  Auto-merge: $AUTO_MERGE"
+  echo ""
+  echo "Decomposition:"
+  echo "$SUB_TASKS" | jq -r 'to_entries[] | "  #\(.key + 1): \(.value)"'
+  echo ""
+  echo "Would spawn $SUB_TASK_COUNT agents, each in own worktree."
+  exit 0
+fi
+
+# ── Step 2: Spawn sub-agents ─────────────────────────────────────────
+echo ""
+echo "  #${PARENT_SHORT_ID}  swarm  running  $(basename "$REPO_ABS")  \"$(echo "$TASK" | head -c 50)\"  ($SUB_TASK_COUNT agents)"
+echo ""
+
+for i in $(seq 0 $((SUB_TASK_COUNT - 1))); do
+  SUB_INDEX=$((i + 1))
+  SUB_TASK=$(echo "$SUB_TASKS" | jq -r ".[$i]")
+  SUB_BRANCH=$(auto_branch_name "swarm" "$SUB_TASK" "$REPO_ABS")
+  SUB_SAFE=$(sanitize_branch "$SUB_BRANCH")
+  SUB_SHORT_ID=$(_next_short_id)
+
+  log_info "Spawning sub-agent #${PARENT_SHORT_ID}.${SUB_INDEX}: $SUB_TASK"
+
+  # Spawn agent
+  SPAWN_ARGS=(--repo "$REPO_ABS" --branch "$SUB_BRANCH" --task "$SUB_TASK")
+  [[ -n "${AGENT:-}" ]] && SPAWN_ARGS+=(--agent "$AGENT")
+
+  "${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null || true
+
+  # Enhance registry entry with swarm metadata
+  registry_update "$SUB_SAFE" "short_id" "$SUB_SHORT_ID"
+  registry_update "$SUB_SAFE" "mode" '"swarm"'
+  registry_update "$SUB_SAFE" "parent_id" "\"$PARENT_ID\""
+  registry_update "$SUB_SAFE" "sub_index" "$SUB_INDEX"
+  registry_update "$SUB_SAFE" "files_touched" '[]'
+  registry_update "$SUB_SAFE" "ci_retries" '0'
+
+  echo "  #${PARENT_SHORT_ID}.${SUB_INDEX}  swarm  spawned  \"$(echo "$SUB_TASK" | head -c 50)\""
+done
+
+# ── Notify ────────────────────────────────────────────────────────────
+"${SCRIPT_DIR}/notify.sh" --type task-started --description "Swarm: $TASK ($SUB_TASK_COUNT agents)" --dry-run 2>/dev/null || true
+
+echo ""
+echo "  All $SUB_TASK_COUNT agents spawned."
+echo "  Status: clawforge status"
+echo "  Attach: clawforge attach ${PARENT_SHORT_ID}.N  (where N is the agent number)"
+echo "  Steer:  clawforge steer ${PARENT_SHORT_ID}.N \"<message>\""
+echo ""
+echo "  Tip: Run 'clawforge watch --daemon' in another pane for auto-monitoring"
