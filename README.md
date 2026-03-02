@@ -57,7 +57,15 @@ Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`,
 
 ## Installation
 
-### Homebrew (recommended)
+| Method | Command | Best For |
+|--------|---------|----------|
+| Homebrew | `brew install cyperx84/tap/clawforge` | macOS users (recommended) |
+| npm | `npm install -g @cyperx84/clawforge` | Node.js users |
+| uv | `uv tool install clawforge` | Python users |
+| bun | `bun install -g @cyperx84/clawforge` | Bun users |
+| Source | See below | Development |
+
+### Homebrew (recommended for macOS)
 
 ```bash
 brew tap cyperx84/tap
@@ -71,7 +79,37 @@ brew update
 brew upgrade clawforge
 ```
 
-### 30-second source install
+### npm / bun
+
+```bash
+# npm
+npm install -g @cyperx84/clawforge
+
+# bun
+bun install -g @cyperx84/clawforge
+```
+
+Upgrade later:
+
+```bash
+npm update -g @cyperx84/clawforge
+# or
+bun update -g @cyperx84/clawforge
+```
+
+### uv (Python)
+
+```bash
+uv tool install clawforge
+```
+
+Upgrade later:
+
+```bash
+uv tool upgrade clawforge
+```
+
+### Source install
 
 ```bash
 git clone https://github.com/cyperx84/clawforge.git
