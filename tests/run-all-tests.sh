@@ -11,7 +11,7 @@ echo ""
 
 TOTAL_PASS=0
 TOTAL_FAIL=0
-TESTS=(test-cli test-registry test-spawn test-watch test-review test-scope test-notify test-merge test-clean test-learn test-foundation test-modes test-management)
+TESTS=(test-cli test-registry test-spawn test-watch test-review test-scope test-notify test-merge test-clean test-learn test-foundation test-modes test-management test-dashboard test-cost test-templates test-conflicts test-ci-loop test-openclaw)
 
 for test in "${TESTS[@]}"; do
   echo "────────────────────────────────────────"
@@ -19,7 +19,7 @@ for test in "${TESTS[@]}"; do
     echo "  → ${test}: PASS"
   else
     echo "  → ${test}: FAIL"
-    ((TOTAL_FAIL++))
+    TOTAL_FAIL=$((TOTAL_FAIL + 1))
   fi
   echo ""
 done
