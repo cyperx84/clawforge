@@ -17,6 +17,10 @@ Arguments:
   <id>          Task short ID (#1), full ID, or sub-agent ID (3.2)
   "<message>"   Course correction message
 
+Options:
+  -h, --help    Show this help message
+  -v, --version Show version number
+
 Examples:
   clawforge steer 1 "Use bcrypt instead of md5 for password hashing"
   clawforge steer 3.2 "Skip the legacy migration files"
@@ -25,6 +29,11 @@ EOF
 }
 
 # ── Parse args ────────────────────────────────────────────────────────
+if [[ "${1:-}" == "--version" ]] || [[ "${1:-}" == "-v" ]]; then
+  cat "${SCRIPT_DIR}/../VERSION"
+  exit 0
+fi
+
 if [[ $# -lt 1 ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
   usage
   [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && exit 0 || exit 1

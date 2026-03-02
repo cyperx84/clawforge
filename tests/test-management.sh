@@ -84,6 +84,12 @@ assert_contains "steer help shows usage" "Usage:" "$BIN_DIR/steer.sh" --help
 assert_contains "attach help shows usage" "Usage:" "$BIN_DIR/attach.sh" --help
 assert_contains "stop help shows usage" "Usage:" "$BIN_DIR/stop.sh" --help
 
+echo "Test 1.5: --version flags"
+assert_ok "steer --version" "$BIN_DIR/steer.sh" --version
+assert_ok "steer -v" "$BIN_DIR/steer.sh" -v
+assert_contains "steer --version shows version" "0.4.0" "$BIN_DIR/steer.sh" --version
+assert_contains "steer -v shows version" "0.4.0" "$BIN_DIR/steer.sh" -v
+
 # ── CLI routing ───────────────────────────────────────────────────
 echo "Test 2: CLI routing"
 assert_ok "steer --help routes" "$CLI" steer --help
