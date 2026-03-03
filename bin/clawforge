@@ -65,6 +65,9 @@ Fleet Ops (v0.6):
   init        Scan project and generate initial memory entries
   history     Show completed task history
 
+Evaluation (v0.6.2):
+  eval        Run-eval logging and weekly summaries
+
 Lifecycle:
   clean       Clean up completed tasks
   learn       Record learnings from completed tasks
@@ -107,6 +110,8 @@ Examples:
   clawforge memory add "Always run tests first"
   clawforge init
   clawforge history --repo api
+  clawforge eval log --command sprint --mode quick --repo api --status ok --duration-ms 420000
+  clawforge eval weekly
   clawforge templates
 EOF
 }
@@ -206,6 +211,7 @@ case "$COMMAND" in
   memory)     exec "${BIN_DIR}/memory.sh" "$@" ;;
   init)       exec "${BIN_DIR}/init.sh" "$@" ;;
   history)    exec "${BIN_DIR}/history.sh" "$@" ;;
+  eval)       exec "${BIN_DIR}/eval.sh" "$@" ;;
 
   # Direct module access (hidden from main help)
   scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;
