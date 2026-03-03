@@ -22,6 +22,9 @@ Keybindings:
   s            Steer selected agent (prompts for message)
   x            Stop selected agent
   /            Filter agents
+  1/2/3        Views: all / running / finished
+  Tab          Cycle views
+  n            Nudge selected running agent
   r            Force refresh
   ?            Show help overlay
   q            Quit dashboard`
