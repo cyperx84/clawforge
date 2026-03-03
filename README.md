@@ -167,6 +167,20 @@ clawforge help
 - `gh` (GitHub CLI, authenticated)
 - `claude` and/or `codex` CLI
 
+
+## Documentation
+
+Full docs live in [`docs/`](./docs/README.md):
+
+- [Getting Started](./docs/getting-started.md)
+- [Workflow Modes](./docs/workflow-modes.md)
+- [Command Reference](./docs/command-reference.md)
+- [Dashboard (Go TUI)](./docs/dashboard.md)
+- [Fleet Ops](./docs/fleet-ops.md)
+- [Evaluation Loop](./docs/evaluation.md)
+- [Configuration](./docs/configuration.md)
+- [Troubleshooting](./docs/troubleshooting.md)
+
 ## Quick Start
 
 ### Sprint — the workhorse
