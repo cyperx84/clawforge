@@ -23,6 +23,7 @@ type Model struct {
 	width       int
 	height      int
 	steerMode   bool
+	showPreview bool
 	steerInput  string
 	confirmStop bool
 	frame       int

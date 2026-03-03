@@ -68,6 +68,10 @@ Fleet Ops (v0.6):
 Reliability (v0.7):
   doctor      Diagnose orphaned sessions, dangling worktrees, stale tasks
 
+Observability (v0.9):
+  logs        Capture agent output from tmux (without attaching)
+  on-complete Fire completion hooks for finished tasks
+
 Evaluation (v0.6.2):
   eval        Run-eval logging and weekly summaries
 
@@ -216,6 +220,8 @@ case "$COMMAND" in
   history)    exec "${BIN_DIR}/history.sh" "$@" ;;
   eval)       exec "${BIN_DIR}/eval.sh" "$@" ;;
   doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
+  logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
+  on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
 
   # Direct module access (hidden from main help)
   scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;

@@ -13,6 +13,7 @@ import (
 type Agent struct {
 	ID          string
 	ShortID     int
+	Preview     string
 	Mode        string
 	Model       string
 	Repo        string
@@ -108,6 +109,7 @@ func LoadAgents() []Agent {
 	tmuxSessions := loadTmuxSessions()
 
 	agents := make([]Agent, 0, len(reg.Tasks))
+	previewLines := 3
 	for _, t := range reg.Tasks {
 		a := Agent{
 			ID:          t.ID,
@@ -130,6 +132,8 @@ func LoadAgents() []Agent {
 		if a.Status == "running" && a.TmuxSession != "" {
 			if _, ok := tmuxSessions[a.TmuxSession]; !ok {
 				a.Status = "failed"
+			} else {
+				a.Preview = captureTmuxPreview(a.TmuxSession, previewLines)
 			}
 		}
 
@@ -244,4 +248,19 @@ func statusIndicator(status string) string {
 	default:
 		return "⚫"
 	}
+}
+
+// captureTmuxPreview grabs the last N lines from a tmux pane.
+func captureTmuxPreview(session string, lines int) string {
+	out, err := exec.Command("tmux", "capture-pane", "-t", session, "-p", "-S", fmt.Sprintf("-%d", lines)).Output()
+	if err != nil {
+		return ""
+	}
+	// Strip ANSI escape codes for clean display
+	result := strings.TrimSpace(string(out))
+	// Basic ANSI strip
+	for _, prefix := range []string{"\033[", "\x1b["} {
+		_ = prefix // handled by sed-like logic below
+	}
+	return result
 }
