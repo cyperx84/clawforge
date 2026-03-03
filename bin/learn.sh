@@ -192,6 +192,27 @@ log_info "Learning recorded for task: $TASK_ID"
 # Output
 echo "$LEARNING" | jq .
 
+# Append to clawforge memory with source=learn
+CLAWFORGE_MEMORY_BASE="$HOME/.clawforge/memory"
+LEARN_REPO=$(echo "$TASK_DATA" | jq -r '.repo // empty')
+if [[ -n "$LEARN_REPO" ]]; then
+  LEARN_REPO_NAME=$(basename "$LEARN_REPO")
+  LEARN_REMOTE=$(git -C "$LEARN_REPO" config --get remote.origin.url 2>/dev/null || true)
+  [[ -n "$LEARN_REMOTE" ]] && LEARN_REPO_NAME=$(basename "$LEARN_REMOTE" .git)
+  LEARN_MEMORY_FILE="${CLAWFORGE_MEMORY_BASE}/${LEARN_REPO_NAME}.jsonl"
+  mkdir -p "$CLAWFORGE_MEMORY_BASE"
+  MEMORY_TEXT="[learn] ${DESC}: ${NOTES:-$AGENT/$MODEL, ${DURATION_MIN}min, retries=$RETRIES}"
+  LEARN_MEM_ENTRY=$(jq -cn \
+    --arg id "learn-$(date +%s)" \
+    --arg text "$MEMORY_TEXT" \
+    --argjson tags "$TAGS_JSON" \
+    --arg created "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --arg source "learn" \
+    '{id:$id, text:$text, tags:$tags, created:$created, source:$source}')
+  echo "$LEARN_MEM_ENTRY" >> "$LEARN_MEMORY_FILE"
+  log_info "Appended to clawforge memory: $LEARN_MEMORY_FILE"
+fi
+
 # Append to Builder's daily memory
 if $MEMORY; then
   mkdir -p "$MEMORY_DIR"

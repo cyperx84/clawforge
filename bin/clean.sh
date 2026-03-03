@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 CLEANUP_LOG="${CLAWFORGE_DIR}/registry/cleanup-log.jsonl"
+COMPLETED_TASKS="${CLAWFORGE_DIR}/registry/completed-tasks.jsonl"
 
 # ── Help ───────────────────────────────────────────────────────────────
 usage() {
@@ -122,6 +123,39 @@ clean_task() {
       --argjson items "$(printf '%s\n' "${cleaned_items[@]}" | jq -R . | jq -s .)" \
       '{timestamp: $timestamp, taskId: $id, previousStatus: $status, cleaned: $items}')
     echo "$log_entry" >> "$CLEANUP_LOG"
+
+    # Append to completed-tasks history
+    local desc mode agent model started_at completed_at dur_min cost pr
+    desc=$(echo "$task_data" | jq -r '.description // "—"')
+    mode=$(echo "$task_data" | jq -r '.mode // "—"')
+    agent=$(echo "$task_data" | jq -r '.agent // "—"')
+    model=$(echo "$task_data" | jq -r '.model // "—"')
+    started_at=$(echo "$task_data" | jq -r '.startedAt // 0')
+    completed_at=$(echo "$task_data" | jq -r '.completedAt // 0')
+    dur_min=0
+    if [[ "$started_at" -gt 0 && "$completed_at" -gt 0 ]]; then
+      dur_min=$(( (completed_at - started_at) / 60000 ))
+    fi
+    cost=$(echo "$task_data" | jq -r '.cost // null')
+    pr=$(echo "$task_data" | jq -r '.pr // null')
+
+    local hist_entry
+    hist_entry=$(jq -cn \
+      --arg id "$id" \
+      --arg description "$desc" \
+      --arg mode "$mode" \
+      --arg status "$status" \
+      --arg agent "$agent" \
+      --arg model "$model" \
+      --arg repo "$(echo "$task_data" | jq -r '.repo // ""')" \
+      --argjson duration_minutes "$dur_min" \
+      --argjson completedAt "$(epoch_ms)" \
+      --argjson timestamp "$(epoch_ms)" \
+      '{id:$id, description:$description, mode:$mode, status:$status, agent:$agent, model:$model, repo:$repo, duration_minutes:$duration_minutes, completedAt:$completedAt, timestamp:$timestamp}')
+    # Add cost and pr only if they exist
+    [[ "$cost" != "null" ]] && hist_entry=$(echo "$hist_entry" | jq --arg c "$cost" '. + {cost:$c}')
+    [[ "$pr" != "null" ]] && hist_entry=$(echo "$hist_entry" | jq --arg p "$pr" '. + {pr:$p}')
+    echo "$hist_entry" >> "$COMPLETED_TASKS"
   fi
 
   echo "Cleaned: $id (${cleaned_items[*]})"

@@ -5,6 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
+source "${SCRIPT_DIR}/routing.sh"
 
 # ── Help ───────────────────────────────────────────────────────────────
 usage() {
@@ -22,6 +23,7 @@ Flags:
   --branch <name>      Override auto-generated branch name
   --agent <name>       Agent to use: claude or codex (default: auto-detect)
   --model <model>      Model override
+  --routing <strategy>  Model routing: auto, cheap, or quality (--model overrides)
   --auto-merge         Merge automatically if CI + review pass
   --template <name>    Apply a task template (overrides defaults, CLI flags override template)
   --ci-loop            Enable CI auto-fix feedback loop
@@ -44,7 +46,7 @@ EOF
 
 # ── Parse args ────────────────────────────────────────────────────────
 REPO="" TASK="" BRANCH="" AGENT="" MODEL="" QUICK=false AUTO_MERGE=false DRY_RUN=false
-TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK=""
+TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK="" ROUTING=""
 POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
@@ -53,6 +55,7 @@ while [[ $# -gt 0 ]]; do
     --branch)         BRANCH="$2"; shift 2 ;;
     --agent)          AGENT="$2"; shift 2 ;;
     --model)          MODEL="$2"; shift 2 ;;
+    --routing)        ROUTING="$2"; shift 2 ;;
     --auto-merge)     AUTO_MERGE=true; shift ;;
     --template)       TEMPLATE="$2"; shift 2 ;;
     --ci-loop)        CI_LOOP=true; shift ;;
@@ -119,12 +122,19 @@ fi
 
 # ── Resolve agent + model ────────────────────────────────────────────
 RESOLVED_AGENT=$(detect_agent "${AGENT:-}")
+MODEL_OVERRIDE="$MODEL"  # preserve explicit --model
 if [[ -z "$MODEL" ]]; then
   if [[ "$RESOLVED_AGENT" == "claude" ]]; then
     MODEL=$(config_get default_model_claude "claude-sonnet-4-5")
   else
     MODEL=$(config_get default_model_codex "gpt-5.3-codex")
   fi
+fi
+
+# ── Load routing ────────────────────────────────────────────────────
+if [[ -n "$ROUTING" ]]; then
+  load_routing "$ROUTING"
+  log_info "Routing: strategy=$ROUTING"
 fi
 
 # ── Assign short ID ──────────────────────────────────────────────────
@@ -152,6 +162,7 @@ if $DRY_RUN; then
   echo "  Short ID:   #$SHORT_ID"
   echo "  Auto-merge: $AUTO_MERGE"
   echo "  Quick:      $QUICK"
+  [[ -n "$ROUTING" ]] && echo "  Routing:    $ROUTING"
   echo ""
   echo "Would execute:"
   echo "  1. Scope task"
@@ -177,13 +188,24 @@ fi
 
 # ── Step 1: Scope ─────────────────────────────────────────────────────
 log_info "Step 1: Scoping task..."
+# Apply routing model for scope phase (--model overrides routing)
+if [[ -n "$ROUTING" && -z "$MODEL_OVERRIDE" ]]; then
+  SCOPE_MODEL=$(get_model_for_phase "scope")
+  [[ -n "$SCOPE_MODEL" ]] && log_info "Routing: scope → $SCOPE_MODEL"
+fi
 PROMPT=$("${SCRIPT_DIR}/scope-task.sh" --task "$TASK" 2>/dev/null || echo "$TASK")
 
 # ── Step 2: Spawn ─────────────────────────────────────────────────────
 log_info "Step 2: Spawning agent..."
+# Apply routing model for implement phase (--model overrides routing)
+SPAWN_MODEL="$MODEL"
+if [[ -n "$ROUTING" && -z "$MODEL_OVERRIDE" ]]; then
+  IMPL_MODEL=$(get_model_for_phase "implement")
+  [[ -n "$IMPL_MODEL" ]] && SPAWN_MODEL="$IMPL_MODEL" && log_info "Routing: implement → $IMPL_MODEL"
+fi
 SPAWN_ARGS=(--repo "$REPO_ABS" --branch "$BRANCH" --task "$PROMPT")
 [[ -n "${AGENT:-}" ]] && SPAWN_ARGS+=(--agent "$AGENT")
-[[ -n "${MODEL:-}" ]] && SPAWN_ARGS+=(--model "$MODEL")
+[[ -n "${SPAWN_MODEL:-}" ]] && SPAWN_ARGS+=(--model "$SPAWN_MODEL")
 
 TASK_JSON=$("${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null || true)
 
