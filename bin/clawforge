@@ -175,7 +175,14 @@ case "$COMMAND" in
   # Existing commands
   status)     show_status "$@" ;;
   watch)      exec "${BIN_DIR}/check-agents.sh" "$@" ;;
-  dashboard)  exec "${BIN_DIR}/dashboard.sh" "$@" ;;
+  dashboard)
+    # Prefer Go TUI binary if available, fallback to dashboard.sh
+    if [[ -x "${BIN_DIR}/clawforge-dashboard" ]]; then
+      exec "${BIN_DIR}/clawforge-dashboard" "$@"
+    else
+      exec "${BIN_DIR}/dashboard.sh" "$@"
+    fi
+    ;;
   clean)      exec "${BIN_DIR}/clean.sh" "$@" ;;
   learn)      exec "${BIN_DIR}/learn.sh" "$@" ;;
 
