@@ -175,11 +175,14 @@ Full docs live in [`docs/`](./docs/README.md):
 - [Getting Started](./docs/getting-started.md)
 - [Workflow Modes](./docs/workflow-modes.md)
 - [Command Reference](./docs/command-reference.md)
+- [Scenario Playbooks](./docs/scenarios.md)
 - [Dashboard (Go TUI)](./docs/dashboard.md)
+- [Architecture](./docs/architecture.md)
 - [Fleet Ops](./docs/fleet-ops.md)
 - [Evaluation Loop](./docs/evaluation.md)
 - [Configuration](./docs/configuration.md)
 - [Troubleshooting](./docs/troubleshooting.md)
+- [FAQ](./docs/faq.md)
 
 ## Quick Start
 

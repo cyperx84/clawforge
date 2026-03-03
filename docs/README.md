@@ -6,11 +6,14 @@ ClawForge is a multi-mode coding workflow CLI for orchestrating coding agents in
 - [Getting Started](./getting-started.md)
 - [Workflow Modes](./workflow-modes.md)
 - [Command Reference](./command-reference.md)
+- [Scenario Playbooks](./scenarios.md)
 - [Dashboard (Go TUI)](./dashboard.md)
+- [Architecture](./architecture.md)
 - [Fleet Ops (memory, init, history)](./fleet-ops.md)
 - [Evaluation Loop](./evaluation.md)
 - [Configuration](./configuration.md)
 - [Troubleshooting](./troubleshooting.md)
+- [FAQ](./faq.md)
 
 ## Versions
 - v0.5: observability (dashboard, cost, conflicts, templates)
