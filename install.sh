@@ -1,70 +1,83 @@
 #!/usr/bin/env bash
+# install.sh — Install ClawForge from source
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MODE=""
-BIN_DIR="${HOME}/.local/bin"
+VERSION=$(cat VERSION 2>/dev/null || echo "dev")
+PREFIX="${PREFIX:-/usr/local}"
+OPENCLAW=false
 
 usage() {
-  cat <<USAGE
-Usage: ./install.sh [--openclaw|--standalone] [--bin-dir <path>]
+  cat <<EOF
+ClawForge Installer v${VERSION}
 
-Modes:
-  --openclaw    Install as OpenClaw skill + CLI symlink
-  --standalone  Install CLI symlink only
+Usage: ./install.sh [options]
 
 Options:
-  --bin-dir     Override bin directory (default: ~/.local/bin)
-  -h, --help    Show this help
-USAGE
+  --prefix <path>    Install prefix (default: /usr/local)
+  --openclaw         Install as OpenClaw skill (symlink to ~/.openclaw/skills/)
+  --uninstall        Remove ClawForge
+  --help             Show this help
+
+Methods:
+  ./install.sh                     # Install to /usr/local/bin
+  ./install.sh --prefix ~/.local   # Install to ~/.local/bin
+  ./install.sh --openclaw          # Install as OpenClaw skill
+EOF
 }
+
+UNINSTALL=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --openclaw) MODE="openclaw"; shift ;;
-    --standalone) MODE="standalone"; shift ;;
-    --bin-dir)
-      BIN_DIR="${2:-}"
-      shift 2
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage
-      exit 1
-      ;;
+    --prefix)    PREFIX="$2"; shift 2 ;;
+    --openclaw)  OPENCLAW=true; shift ;;
+    --uninstall) UNINSTALL=true; shift ;;
+    --help|-h)   usage; exit 0 ;;
+    *)           echo "Unknown option: $1"; usage; exit 1 ;;
   esac
 done
 
-if [[ -z "$MODE" ]]; then
-  if [[ -d "${HOME}/.openclaw" ]]; then
-    MODE="openclaw"
-  else
-    MODE="standalone"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if $UNINSTALL; then
+  echo "Uninstalling ClawForge..."
+  rm -f "${PREFIX}/bin/clawforge"
+  rm -f "${PREFIX}/bin/clawforge-dashboard"
+  echo "Done. Removed from ${PREFIX}/bin/"
+  exit 0
+fi
+
+echo "Installing ClawForge v${VERSION}..."
+
+# Check dependencies
+for cmd in bash jq git tmux; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "⚠️  Missing dependency: $cmd"
   fi
-fi
+done
 
-mkdir -p "$BIN_DIR"
-ln -sf "${SCRIPT_DIR}/bin/clawforge" "${BIN_DIR}/clawforge"
-
-echo "✅ Linked CLI: ${BIN_DIR}/clawforge -> ${SCRIPT_DIR}/bin/clawforge"
-
-if [[ "$MODE" == "openclaw" ]]; then
+if $OPENCLAW; then
+  # Symlink into OpenClaw skills
   SKILL_DIR="${HOME}/.openclaw/skills/clawforge"
-  mkdir -p "${SKILL_DIR}/scripts"
-  ln -sf "${SCRIPT_DIR}/SKILL.md" "${SKILL_DIR}/SKILL.md"
-  ln -sf "${SCRIPT_DIR}/bin/clawforge" "${SKILL_DIR}/scripts/clawforge"
-  echo "✅ Wired OpenClaw skill in ${SKILL_DIR}"
-fi
+  mkdir -p "$SKILL_DIR"
+  ln -sf "${SCRIPT_DIR}/bin/clawforge" "${SKILL_DIR}/clawforge"
+  ln -sf "${SCRIPT_DIR}/bin/clawforge-dashboard" "${SKILL_DIR}/clawforge-dashboard"
 
-echo
-if command -v clawforge >/dev/null 2>&1; then
-  echo "Installed: $(clawforge version)"
+  # Also add to PATH via symlink
+  mkdir -p "${PREFIX}/bin"
+  ln -sf "${SCRIPT_DIR}/bin/clawforge" "${PREFIX}/bin/clawforge"
+  ln -sf "${SCRIPT_DIR}/bin/clawforge-dashboard" "${PREFIX}/bin/clawforge-dashboard"
+
+  echo "✅ Installed as OpenClaw skill + PATH symlinks"
 else
-  echo "⚠️  'clawforge' not found in PATH yet. Add '${BIN_DIR}' to PATH."
+  # Standard install: symlink binaries
+  mkdir -p "${PREFIX}/bin"
+  ln -sf "${SCRIPT_DIR}/bin/clawforge" "${PREFIX}/bin/clawforge"
+  ln -sf "${SCRIPT_DIR}/bin/clawforge-dashboard" "${PREFIX}/bin/clawforge-dashboard"
+
+  echo "✅ Installed to ${PREFIX}/bin/"
 fi
 
-echo "Try: clawforge help"
+echo ""
+echo "Verify: clawforge version"
+echo "Get started: clawforge help"

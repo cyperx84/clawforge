@@ -1,0 +1,31 @@
+{
+  "name": "@cyperx84/clawforge",
+  "version": "1.1.0",
+  "description": "Multi-mode coding workflow CLI for orchestrating AI coding agents",
+  "bin": {
+    "clawforge": "./bin/clawforge"
+  },
+  "scripts": {
+    "postinstall": "echo 'ClawForge installed. Run: clawforge help'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cyperx84/clawforge.git"
+  },
+  "keywords": ["cli", "coding", "agents", "orchestration", "tmux", "worktree"],
+  "author": "cyperx84",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "os": ["darwin", "linux"],
+  "files": [
+    "bin/",
+    "lib/",
+    "tui/",
+    "registry/",
+    "VERSION",
+    "README.md",
+    "LICENSE"
+  ]
+}
