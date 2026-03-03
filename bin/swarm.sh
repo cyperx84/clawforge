@@ -50,7 +50,7 @@ EOF
 # ── Parse args ────────────────────────────────────────────────────────
 REPO="" TASK="" MAX_AGENTS=3 AGENT="" AUTO_MERGE=false DRY_RUN=false SKIP_CONFIRM=false
 TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK=""
-REPOS="" REPOS_FILE="" ROUTING="" MULTI_REPO=false
+REPOS="" REPOS_FILE="" ROUTING="" MULTI_REPO=false AUTO_CLEAN=false TIMEOUT_MIN=""
 POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
@@ -68,6 +68,8 @@ while [[ $# -gt 0 ]]; do
     --json)           JSON_OUTPUT=true; shift ;;
     --notify)         NOTIFY=true; shift ;;
     --webhook)        WEBHOOK="$2"; shift 2 ;;
+    --auto-clean)     AUTO_CLEAN=true; shift ;;
+    --timeout)        TIMEOUT_MIN="$2"; shift 2 ;;
     --dry-run)        DRY_RUN=true; shift ;;
     --yes)            SKIP_CONFIRM=true; shift ;;
     --help|-h)        usage; exit 0 ;;
@@ -103,6 +105,11 @@ case ${#POSITIONAL[@]} in
   *) log_error "Too many positional arguments"; usage; exit 1 ;;
 esac
 
+if [[ -n "$TIMEOUT_MIN" && ! "$TIMEOUT_MIN" =~ ^[0-9]+$ ]]; then
+  log_error "--timeout must be an integer number of minutes"
+  exit 1
+fi
+
 # ── Resolve multi-repo paths ─────────────────────────────────────────
 REPO_LIST=()
 if [[ -n "$REPOS" ]]; then
@@ -136,6 +143,9 @@ if [[ -z "$REPO" ]]; then
 fi
 REPO_ABS=$(cd "$REPO" && pwd)
 
+# Disk safety check before spawn/decompose
+disk_check "$REPO_ABS" || { log_error "Aborting due to low disk space"; exit 1; }
+
 # ── Resolve agent ─────────────────────────────────────────────────────
 RESOLVED_AGENT=$(detect_agent "${AGENT:-}")
 if [[ "$RESOLVED_AGENT" == "claude" ]]; then
@@ -168,6 +178,7 @@ if [[ "$AGENT_COUNT" -gt "$RAM_THRESHOLD" ]] && ! $SKIP_CONFIRM && ! $DRY_RUN; t
 fi
 
 # ── Multi-repo mode ──────────────────────────────────────────────────
+SPAWN_FAILED=0
 if $MULTI_REPO; then
   # ── Multi-repo: one agent per repo, skip decomposition ────────────
   SUB_TASK_COUNT=${#REPO_LIST[@]}
@@ -225,6 +236,10 @@ if $MULTI_REPO; then
   $CI_LOOP && registry_update "$PARENT_ID" "ci_loop" 'true'
   registry_update "$PARENT_ID" "max_ci_retries" "$MAX_CI_RETRIES"
   [[ -n "$BUDGET" ]] && registry_update "$PARENT_ID" "budget" "$BUDGET"
+  [[ -n "$TIMEOUT_MIN" ]] && registry_update "$PARENT_ID" "timeout_minutes" "$TIMEOUT_MIN"
+  $AUTO_CLEAN && registry_update "$PARENT_ID" "auto_clean" "true"
+  [[ -n "$TIMEOUT_MIN" ]] && registry_update "$PARENT_ID" "timeout_minutes" "$TIMEOUT_MIN"
+  $AUTO_CLEAN && registry_update "$PARENT_ID" "auto_clean" "true"
 
   # ── Dry-run output ───────────────────────────────────────────────
   if $DRY_RUN; then
@@ -235,6 +250,10 @@ if $MULTI_REPO; then
     echo "  Short ID:   #$PARENT_SHORT_ID"
     echo "  Sub-tasks:  $SUB_TASK_COUNT (one per repo)"
     echo "  Auto-merge: $AUTO_MERGE"
+    [[ -n "$TIMEOUT_MIN" ]] && echo "  Timeout:    ${TIMEOUT_MIN}m"
+    $AUTO_CLEAN && echo "  Auto-clean: true"
+    [[ -n "$TIMEOUT_MIN" ]] && echo "  Timeout:    ${TIMEOUT_MIN}m"
+    $AUTO_CLEAN && echo "  Auto-clean: true"
     [[ -n "$ROUTING" ]] && echo "  Routing:    $ROUTING"
     echo ""
     echo "Repos:"
@@ -273,7 +292,11 @@ ${TASK}"
     [[ -n "${AGENT:-}" ]] && SPAWN_ARGS+=(--agent "$AGENT")
     [[ -n "$MODEL" ]] && SPAWN_ARGS+=(--model "$MODEL")
 
-    "${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null || true
+    if ! "${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null; then
+      log_error "Failed to spawn sub-agent for repo ${SUB_REPO_NAME}"
+      SPAWN_FAILED=$((SPAWN_FAILED + 1))
+      continue
+    fi
 
     # Enhance registry entry with swarm + repo metadata
     registry_update "$SUB_SAFE" "short_id" "$SUB_SHORT_ID"
@@ -304,15 +327,32 @@ Respond with ONLY a JSON array of sub-task descriptions. Example:
   # Try to decompose using agent, fall back to splitting by sentence
   SUB_TASKS="[]"
   if command -v claude &>/dev/null && ! $DRY_RUN; then
-    DECOMPOSED=$(claude --model "$MODEL" -p "$DECOMPOSE_PROMPT" 2>/dev/null || true)
+    # Guard decomposition so swarm doesn't stall builds if model call hangs.
+    DECOMP_TIMEOUT_SEC=$(( $(config_get decompose_timeout_minutes 2) * 60 ))
+    TMP_DECOMP=$(mktemp)
+    (claude --model "$MODEL" -p "$DECOMPOSE_PROMPT" >"$TMP_DECOMP" 2>/dev/null || true) &
+    CLAUDE_PID=$!
+    (
+      sleep "$DECOMP_TIMEOUT_SEC"
+      if kill -0 "$CLAUDE_PID" 2>/dev/null; then
+        log_warn "Swarm decomposition timed out after ${DECOMP_TIMEOUT_SEC}s; using fallback split"
+        kill "$CLAUDE_PID" 2>/dev/null || true
+      fi
+    ) &
+    WATCHDOG_PID=$!
+    wait "$CLAUDE_PID" 2>/dev/null || true
+    kill "$WATCHDOG_PID" 2>/dev/null || true
+    DECOMPOSED=$(cat "$TMP_DECOMP" 2>/dev/null || true)
+    rm -f "$TMP_DECOMP"
+
     # Try to extract JSON array from response
     if echo "$DECOMPOSED" | jq -e 'type == "array"' >/dev/null 2>&1; then
       SUB_TASKS="$DECOMPOSED"
     elif echo "$DECOMPOSED" | grep -o '\[.*\]' | jq -e 'type == "array"' >/dev/null 2>&1; then
       SUB_TASKS=$(echo "$DECOMPOSED" | grep -o '\[.*\]' | head -1)
     else
-      # Fallback: treat the whole task as one sub-task
-      SUB_TASKS=$(jq -n --arg t "$TASK" '[$t]')
+      # Fallback: split task into N generic parts to keep pipeline moving
+      SUB_TASKS=$(jq -n --arg t "$TASK" --argjson n "$MAX_AGENTS" '[range($n) | "\($t) (part \(. + 1))"]')
     fi
   else
     # Dry-run or no agent: create placeholder sub-tasks
@@ -407,7 +447,11 @@ Respond with ONLY a JSON array of sub-task descriptions. Example:
     [[ -n "${AGENT:-}" ]] && SPAWN_ARGS+=(--agent "$AGENT")
     [[ -n "$MODEL" ]] && SPAWN_ARGS+=(--model "$MODEL")
 
-    "${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null || true
+    if ! "${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null; then
+      log_error "Failed to spawn sub-agent ${SUB_INDEX}"
+      SPAWN_FAILED=$((SPAWN_FAILED + 1))
+      continue
+    fi
 
     # Enhance registry entry with swarm metadata
     registry_update "$SUB_SAFE" "short_id" "$SUB_SHORT_ID"
@@ -419,6 +463,16 @@ Respond with ONLY a JSON array of sub-task descriptions. Example:
 
     echo "  #${PARENT_SHORT_ID}.${SUB_INDEX}  swarm  spawned  \"$(echo "$SUB_TASK" | head -c 50)\""
   done
+fi
+
+if [[ "$SPAWN_FAILED" -gt 0 ]]; then
+  registry_update "$PARENT_ID" "spawn_failed" "$SPAWN_FAILED" || true
+  if [[ "$SPAWN_FAILED" -ge "$SUB_TASK_COUNT" ]]; then
+    registry_update "$PARENT_ID" "status" '"failed"' || true
+    log_error "All sub-agent spawns failed (${SPAWN_FAILED}/${SUB_TASK_COUNT})."
+  else
+    log_warn "Some sub-agent spawns failed (${SPAWN_FAILED}/${SUB_TASK_COUNT})."
+  fi
 fi
 
 # ── Notify ────────────────────────────────────────────────────────────
@@ -458,7 +512,7 @@ if $JSON_OUTPUT; then
     '{taskId: $taskId, shortId: $shortId, mode: $mode, status: $status, subTaskCount: $subTaskCount, description: $description, repo: $repo, autoMerge: $autoMerge, ciLoop: $ciLoop}'
 else
   echo ""
-  echo "  All $SUB_TASK_COUNT agents spawned."
+  echo "  Spawned $((SUB_TASK_COUNT - SPAWN_FAILED))/$SUB_TASK_COUNT agents."
   echo "  Status: clawforge status"
   echo "  Attach: clawforge attach ${PARENT_SHORT_ID}.N  (where N is the agent number)"
   echo "  Steer:  clawforge steer ${PARENT_SHORT_ID}.N \"<message>\""
@@ -466,5 +520,6 @@ else
   $CI_LOOP && echo "  CI feedback loop: enabled (max retries: $MAX_CI_RETRIES)"
   [[ -n "$BUDGET" ]] && echo "  Budget cap: \$$BUDGET"
   [[ -n "$ROUTING" ]] && echo "  Routing: $ROUTING"
+  [[ "$SPAWN_FAILED" -gt 0 ]] && echo "  ⚠️  Spawn failures: $SPAWN_FAILED (check clawforge doctor + logs)"
   echo "  Tip: Run 'clawforge watch --daemon' in another pane for auto-monitoring"
 fi

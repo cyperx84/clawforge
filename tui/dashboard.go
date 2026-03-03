@@ -27,7 +27,13 @@ func renderDashboard(m Model) string {
 
 	// Header.
 	title := headerStyle.Render("⚒️  ClawForge Dashboard")
+	viewLabel := m.viewMode
+	if viewLabel == "" {
+		viewLabel = "all"
+	}
 	b.WriteString(title)
+	b.WriteString("  ")
+	b.WriteString(lipgloss.NewStyle().Faint(true).Render("view: " + viewLabel + " (1/2/3, tab)"))
 	b.WriteString("\n\n")
 
 	// Filter bar (if active).
@@ -168,8 +174,8 @@ func renderStatusBar(m Model) string {
 		costStr = fmt.Sprintf("$%.2f", totalCost)
 	}
 
-	bar := fmt.Sprintf(" %d agents | %d running | %s total | j/k navigate | ? help | q quit",
-		total, running, costStr)
+	bar := fmt.Sprintf(" %d agents | %d running | %s total | view:%s | j/k navigate | n nudge | ? help | q quit",
+		total, running, costStr, m.viewMode)
 
 	return statusBarStyle.Render(bar)
 }

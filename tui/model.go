@@ -17,6 +17,7 @@ type Model struct {
 	selected    int
 	filter      string
 	filterMode  bool
+	viewMode    string // all | running | finished
 	showHelp    bool
 	animating   bool
 	width       int
@@ -30,7 +31,26 @@ type Model struct {
 
 // filteredAgents returns the agents matching the current filter.
 func (m Model) filteredAgents() []Agent {
-	return FilterAgents(m.agents, m.filter)
+	agents := m.agents
+	switch m.viewMode {
+	case "running":
+		var tmp []Agent
+		for _, a := range agents {
+			if a.Status == "running" || a.Status == "spawned" {
+				tmp = append(tmp, a)
+			}
+		}
+		agents = tmp
+	case "finished":
+		var tmp []Agent
+		for _, a := range agents {
+			if a.Status == "done" || a.Status == "archived" || a.Status == "failed" || a.Status == "cancelled" || a.Status == "timeout" {
+				tmp = append(tmp, a)
+			}
+		}
+		agents = tmp
+	}
+	return FilterAgents(agents, m.filter)
 }
 
 // NewModel creates a new Model. If noAnim is true, the startup animation is skipped.
@@ -38,6 +58,7 @@ func NewModel(noAnim bool) Model {
 	return Model{
 		animating: !noAnim,
 		noAnim:    noAnim,
+		viewMode:  "all",
 	}
 }
 
@@ -106,6 +127,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case attachDoneMsg:
 		// Returned from tmux attach — refresh data.
+		m.agents = LoadAgents()
+		return m, nil
+
+	case nudgeDoneMsg:
+		// Nudge command finished — refresh data.
 		m.agents = LoadAgents()
 		return m, nil
 

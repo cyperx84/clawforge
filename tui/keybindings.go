@@ -14,6 +14,9 @@ type stopDoneMsg struct{ err error }
 // attachDoneMsg is sent when an attach (tmux) command finishes.
 type attachDoneMsg struct{ err error }
 
+// nudgeDoneMsg is sent when a nudge command finishes.
+type nudgeDoneMsg struct{ err error }
+
 // handleKeyPress dispatches key events to the appropriate handler based on
 // current mode (filter, steer, or normal dashboard).
 func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
@@ -100,6 +103,32 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 		m.filter = ""
 		return m, nil
 
+	case "1":
+		m.viewMode = "all"
+		m.selected = 0
+		return m, nil
+
+	case "2":
+		m.viewMode = "running"
+		m.selected = 0
+		return m, nil
+
+	case "3":
+		m.viewMode = "finished"
+		m.selected = 0
+		return m, nil
+
+	case "tab":
+		if m.viewMode == "all" {
+			m.viewMode = "running"
+		} else if m.viewMode == "running" {
+			m.viewMode = "finished"
+		} else {
+			m.viewMode = "all"
+		}
+		m.selected = 0
+		return m, nil
+
 	case "r":
 		// Force refresh.
 		m.agents = LoadAgents()
@@ -107,6 +136,19 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 		filtered := m.filteredAgents()
 		if m.selected >= len(filtered) {
 			m.selected = max(0, len(filtered)-1)
+		}
+		return m, nil
+
+	case "n":
+		// Nudge selected running agent with a lightweight progress prompt.
+		if count > 0 {
+			agent := agents[m.selected]
+			if agent.Status == "running" || agent.Status == "spawned" {
+				cmd := exec.Command("clawforge", "steer", agent.ID, "Quick nudge: share current progress, blockers, and ETA.")
+				return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
+					return nudgeDoneMsg{err}
+				})
+			}
 		}
 		return m, nil
 
@@ -158,6 +200,9 @@ func renderHelpOverlay(width int) string {
 		{"s", "Steer selected agent (prompts for message)"},
 		{"x", "Stop selected agent"},
 		{"/", "Filter agents"},
+		{"1/2/3", "Views: all / running / finished"},
+		{"Tab", "Cycle views"},
+		{"n", "Nudge selected running agent"},
 		{"r", "Force refresh"},
 		{"g/G", "Go to top/bottom"},
 		{"?", "Toggle help overlay"},
