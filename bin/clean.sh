@@ -19,12 +19,14 @@ Options:
   --stale-days <n>    Clean tasks older than N days
   --force             Allow cleaning running tasks
   --dry-run           Show what would be cleaned without doing it
+  --prune-days <n>    Remove archived tasks older than N days from registry
+  --keep-branch       Skip branch deletion after cleaning
   --help              Show this help
 EOF
 }
 
 # ── Parse args ─────────────────────────────────────────────────────────
-TASK_ID="" ALL_DONE=false STALE_DAYS="" FORCE=false DRY_RUN=false
+TASK_ID="" ALL_DONE=false STALE_DAYS="" FORCE=false DRY_RUN=false PRUNE_DAYS="" KEEP_BRANCH=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,12 +35,14 @@ while [[ $# -gt 0 ]]; do
     --stale-days)  STALE_DAYS="$2"; shift 2 ;;
     --force)       FORCE=true; shift ;;
     --dry-run)     DRY_RUN=true; shift ;;
+    --prune-days)  PRUNE_DAYS="$2"; shift 2 ;;
+    --keep-branch) KEEP_BRANCH=true; shift ;;
     --help|-h)     usage; exit 0 ;;
     *)             log_error "Unknown option: $1"; usage; exit 1 ;;
   esac
 done
 
-if [[ -z "$TASK_ID" ]] && ! $ALL_DONE && [[ -z "$STALE_DAYS" ]]; then
+if [[ -z "$TASK_ID" ]] && ! $ALL_DONE && [[ -z "$STALE_DAYS" ]] && [[ -z "$PRUNE_DAYS" ]]; then
   log_error "Specify --task-id, --all-done, or --stale-days"
   usage
   exit 1
@@ -101,6 +105,27 @@ clean_task() {
       log_info "Removed worktree: $worktree"
     fi
     cleaned_items+=("worktree:$worktree")
+  fi
+
+
+  # Delete merged branch
+  if ! $KEEP_BRANCH; then
+    local branch
+    branch=$(echo "$task_data" | jq -r '.branch // empty')
+    if [[ -n "$branch" && -n "$repo" && -d "$repo" ]]; then
+      # Only delete if merged into main/master
+      local main_branch
+      main_branch=$(git -C "$repo" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||' || echo "main")
+      if git -C "$repo" branch --merged "$main_branch" 2>/dev/null | grep -qF "$branch"; then
+        if $DRY_RUN; then
+          echo "[dry-run] Would delete merged branch: $branch"
+        else
+          git -C "$repo" branch -d "$branch" 2>/dev/null || true
+          log_info "Deleted merged branch: $branch"
+        fi
+        cleaned_items+=("branch:$branch")
+      fi
+    fi
   fi
 
   # Update registry (archive instead of remove)
@@ -205,3 +230,28 @@ fi
 
 echo ""
 echo "Total cleaned: $CLEANED"
+
+# ── Registry pruning ────────────────────────────────────────────────
+if [[ -n "$PRUNE_DAYS" ]]; then
+  NOW_MS=$(epoch_ms)
+  PRUNE_MS=$((PRUNE_DAYS * 86400 * 1000))
+  CUTOFF=$((NOW_MS - PRUNE_MS))
+
+  ARCHIVED_IDS=$(jq -r --argjson cutoff "$CUTOFF"     '.tasks[] | select(.status == "archived" and (.cleanedAt // 0) < $cutoff) | .id'     "$REGISTRY_FILE" 2>/dev/null || true)
+
+  if [[ -n "$ARCHIVED_IDS" ]]; then
+    local pruned=0
+    while IFS= read -r id; do
+      if $DRY_RUN; then
+        echo "[dry-run] Would prune archived task: $id"
+      else
+        registry_remove "$id"
+        log_info "Pruned archived task: $id"
+      fi
+      pruned=$((pruned + 1))
+    done <<< "$ARCHIVED_IDS"
+    echo "Pruned: $pruned archived tasks older than $PRUNE_DAYS days"
+  else
+    log_info "No archived tasks older than $PRUNE_DAYS days to prune"
+  fi
+fi
