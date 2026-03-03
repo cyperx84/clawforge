@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v0.6 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v0.8 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -35,6 +35,27 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v0.8
+
+```bash
+clawforge dashboard                 # Views: 1=all, 2=running, 3=finished, Tab=cycle
+                                    # n=nudge running agent
+clawforge doctor                    # Diagnose orphans, stale tasks, disk, branches
+clawforge doctor --fix              # Auto-fix issues
+clawforge sprint --auto-clean --timeout 30 "Task"   # Auto-cleanup + watchdog
+clawforge clean --prune-days 14     # Remove old archived tasks from registry
+clawforge clean --all-done          # Clean + delete merged branches automatically
+```
+
+### New in v0.7
+
+```bash
+clawforge doctor                    # Health check: orphans, stale tasks, disk space
+clawforge doctor --fix              # Auto-remediate issues
+clawforge sprint "Task" --auto-clean --timeout 30  # Cleanup + watchdog
+clawforge clean --prune-days 14     # Prune old archived entries
 ```
 
 ### New in v0.6
