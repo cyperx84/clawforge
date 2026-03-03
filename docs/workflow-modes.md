@@ -46,3 +46,23 @@ Key flags:
 - `--template <name>`
 - `--ci-loop`, `--max-ci-retries`
 - `--budget`, `--json`, `--notify`, `--webhook`
+
+## Reliability flags (v0.7+)
+
+All workflow modes support:
+
+| Flag | Description |
+|------|-------------|
+| `--auto-clean` | Automatically clean worktree + tmux session when task completes |
+| `--timeout <min>` | Kill agent after N minutes (watchdog) |
+
+These work on both `sprint` and `swarm`.
+
+## Completion hooks (v0.9)
+
+When a task finishes, `on-complete` can fire:
+1. OpenClaw event notification (if `--notify` was set)
+2. Webhook POST (if `--webhook` was set)
+3. Auto-clean (if `--auto-clean` was set)
+
+Use `clawforge on-complete <id>` manually or let `watch --daemon` trigger it.
