@@ -1,0 +1,64 @@
+name: Version Sync
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+      - name: Update VERSION file
+        run: echo "${{ steps.version.outputs.version }}" > VERSION
+
+      - name: Update package.json
+        run: |
+          jq --arg v "${{ steps.version.outputs.version }}" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+
+      - name: Update pyproject.toml
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${{ steps.version.outputs.version }}\"/" pyproject.toml
+
+      - name: Update Homebrew formula URL
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          sed -i "s|archive/refs/tags/v.*\.tar\.gz|archive/refs/tags/${TAG}.tar.gz|" Formula/clawforge.rb
+
+      - name: Update Homebrew formula SHA256
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          URL="https://github.com/cyperx84/clawforge/archive/refs/tags/${TAG}.tar.gz"
+          SHA=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          if [ -n "$SHA" ] && [ "$SHA" != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ]; then
+            sed -i "/^  url/a\  sha256 \"${SHA}\"" Formula/clawforge.rb
+          fi
+
+      - name: Update CHANGELOG header
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -q "## v${VERSION}" CHANGELOG.md; then
+            sed -i "s/^# Changelog/# Changelog\n\n## v${VERSION}\n\n_Release notes pending._/" CHANGELOG.md
+          fi
+
+      - name: Commit version sync
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION package.json pyproject.toml Formula/clawforge.rb CHANGELOG.md
+          git diff --cached --quiet || git commit -m "chore: sync versions to ${{ steps.version.outputs.tag }}"
+          git push origin HEAD:main
