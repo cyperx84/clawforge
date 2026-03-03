@@ -232,6 +232,14 @@ clawforge dashboard                # Full overview + system health
 | `clean` | Clean up completed tasks | `--all-done`, `--stale-days`, `--dry-run` |
 | `learn` | Record learnings | `--auto`, `--notes`, `--memory` |
 
+### Fleet Ops (v0.6)
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `memory` | Per-repo agent memory | `show`, `add`, `search`, `forget`, `clear` |
+| `init` | Scan project, generate initial memories | `--claude-md` |
+| `history` | Show completed task history | `--repo`, `--mode`, `--limit`, `--all` |
+
 ### Direct Module Access (via `clawforge help --all`)
 
 | Command | Description |
@@ -253,6 +261,8 @@ clawforge dashboard                # Full overview + system health
 - **Escalation suggestions** — Quick mode detects complex tasks, suggests full sprint
 - **Conflict detection** — Dashboard warns when swarm agents touch overlapping files
 - **RAM warnings** — Prompts when spawning >3 agents
+- **Agent memory** — Per-repo knowledge base injected into agent prompts (max 20 entries)
+- **Project init** — Auto-detect language, framework, test runner and seed memories
 
 ## Configuration
 

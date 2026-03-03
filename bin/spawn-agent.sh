@@ -101,8 +101,27 @@ if [[ -f "$WORKTREE_DIR/package.json" ]]; then
   fi
 fi
 
-# ── Step 3: Build prompt ──────────────────────────────────────────────
-FULL_PROMPT="$TASK
+# ── Step 3: Build prompt (with memory injection) ─────────────────────
+MEMORY_SECTION=""
+MEMORY_BASE="$HOME/.clawforge/memory"
+REPO_NAME=$(basename "$REPO_ABS")
+# Try git remote for repo name
+REMOTE_URL=$(git -C "$REPO_ABS" config --get remote.origin.url 2>/dev/null || true)
+[[ -n "$REMOTE_URL" ]] && REPO_NAME=$(basename "$REMOTE_URL" .git)
+MEMORY_FILE="${MEMORY_BASE}/${REPO_NAME}.jsonl"
+
+if [[ -f "$MEMORY_FILE" ]] && [[ -s "$MEMORY_FILE" ]]; then
+  MEMORIES=$(tail -20 "$MEMORY_FILE" | jq -r '.text' 2>/dev/null || true)
+  if [[ -n "$MEMORIES" ]]; then
+    MEMORY_SECTION="
+## Project Notes
+$MEMORIES
+"
+    log_info "Injected $(echo "$MEMORIES" | wc -l | tr -d ' ') memories into prompt"
+  fi
+fi
+
+FULL_PROMPT="${MEMORY_SECTION}$TASK
 
 When complete:
 1. Commit your changes with a descriptive message

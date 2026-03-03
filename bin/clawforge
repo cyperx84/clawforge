@@ -60,6 +60,11 @@ Observability (v0.5):
   conflicts   Swarm conflict detection and resolution
   templates   Task template management
 
+Fleet Ops (v0.6):
+  memory      Per-repo agent memory (show, add, search, forget, clear)
+  init        Scan project and generate initial memory entries
+  history     Show completed task history
+
 Lifecycle:
   clean       Clean up completed tasks
   learn       Record learnings from completed tasks
@@ -96,6 +101,10 @@ Examples:
   clawforge steer 1 "Use bcrypt instead of md5"
   clawforge dashboard
   clawforge cost --summary
+  clawforge memory show
+  clawforge memory add "Always run tests first"
+  clawforge init
+  clawforge history --repo api
   clawforge templates
 EOF
 }
@@ -190,6 +199,11 @@ case "$COMMAND" in
   cost)       exec "${BIN_DIR}/cost.sh" "$@" ;;
   conflicts)  exec "${BIN_DIR}/conflicts.sh" "$@" ;;
   templates)  exec "${BIN_DIR}/templates.sh" "$@" ;;
+
+  # v0.6 fleet operations
+  memory)     exec "${BIN_DIR}/memory.sh" "$@" ;;
+  init)       exec "${BIN_DIR}/init.sh" "$@" ;;
+  history)    exec "${BIN_DIR}/history.sh" "$@" ;;
 
   # Direct module access (hidden from main help)
   scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;
