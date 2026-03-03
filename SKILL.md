@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v0.5 — Multi-Mode Coding Workflow + Observability
+# ClawForge v0.6 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -21,7 +21,7 @@ ClawForge manages coding agents (Claude Code, Codex) running in tmux sessions on
 - **Review** — Quality gate on an existing PR (analysis only)
 - **Swarm** — Parallel multi-agent orchestration
 
-Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard` and new observability commands: `cost`, `conflicts`, `templates`.
+Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard`, observability commands `cost`, `conflicts`, `templates`, and fleet ops commands `memory`, `init`, `history`.
 
 ## Quick Start
 
@@ -35,6 +35,17 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v0.6
+
+```bash
+clawforge swarm --repos ~/api,~/web "Upgrade auth library"
+clawforge sprint --routing auto "Refactor auth service"
+clawforge memory add "Run prisma generate after schema changes"
+clawforge memory search prisma
+clawforge init --claude-md
+clawforge history --mode swarm --limit 5
 ```
 
 ### Sprint (single agent)
@@ -57,6 +68,7 @@ clawforge review --pr 42 --fix    # Spawn agent to fix issues
 ```bash
 clawforge swarm "Migrate all tests from jest to vitest"
 clawforge swarm "Add i18n to all user-facing strings" --max-agents 4
+clawforge swarm --repos ~/api,~/web,~/shared "Upgrade auth v2 to v3"
 ```
 
 ### Monitor & Manage
@@ -83,6 +95,7 @@ The workhorse. Single agent, full dev cycle.
 - `--branch <name>` — Override auto-generated branch name
 - `--agent <claude|codex>` — Override agent selection
 - `--model <model>` — Override model
+- `--routing <auto|cheap|quality>` — Phase-based model routing
 - `--auto-merge` — Merge automatically if CI + review pass
 - `--dry-run` — Preview what would happen
 
@@ -109,6 +122,9 @@ Parallel multi-agent orchestration. Decomposes task, spawns N agents.
 **Flags:**
 - `--max-agents <N>` — Cap parallel agents (default: 3, warns on >3 re: RAM)
 - `--agent <name>` — Force specific agent for all sub-tasks
+- `--repos <paths>` — Multi-repo swarm (comma-separated paths)
+- `--repos-file <file>` — Multi-repo swarm from file
+- `--routing <auto|cheap|quality>` — Phase-based model routing
 - `--auto-merge` — Merge each PR automatically after CI + review
 - `--dry-run` — Show decomposition plan without spawning
 

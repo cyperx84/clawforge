@@ -98,6 +98,8 @@ Examples:
   clawforge review --pr 42
   clawforge swarm "Migrate all tests from jest to vitest"
   clawforge swarm --template migration "Migrate to TypeScript" --ci-loop
+  clawforge swarm --repos ~/api,~/web,~/shared "Upgrade auth library"
+  clawforge sprint --routing auto "Refactor auth service"
   clawforge steer 1 "Use bcrypt instead of md5"
   clawforge dashboard
   clawforge cost --summary

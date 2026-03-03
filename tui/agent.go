@@ -14,6 +14,8 @@ type Agent struct {
 	ID          string
 	ShortID     int
 	Mode        string
+	Model       string
+	Repo        string
 	Status      string
 	Branch      string
 	Task        string
@@ -36,6 +38,8 @@ type registryTask struct {
 	Worktree    string `json:"worktree"`
 	TmuxSession string `json:"tmux_session"`
 	Agent       string `json:"agent"`
+	Model       string `json:"model"`
+	Repo        string `json:"repo"`
 	CIStatus    string `json:"ci_status"`
 }
 
@@ -109,6 +113,8 @@ func LoadAgents() []Agent {
 			ID:          t.ID,
 			ShortID:     t.ShortID,
 			Mode:        t.Mode,
+			Model:       t.Model,
+			Repo:        t.Repo,
 			Status:      t.Status,
 			Branch:      t.Branch,
 			Description: t.Description,
@@ -132,6 +138,14 @@ func LoadAgents() []Agent {
 		}
 		if a.Mode == "" {
 			a.Mode = "—"
+		}
+		if a.Model == "" {
+			a.Model = "-"
+		}
+		if a.Repo == "" {
+			a.Repo = "-"
+		} else {
+			a.Repo = filepath.Base(a.Repo)
 		}
 
 		agents = append(agents, a)

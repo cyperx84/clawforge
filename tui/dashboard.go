@@ -12,8 +12,10 @@ const (
 	colID       = 5
 	colMode     = 8
 	colStatus   = 10
-	colBranch   = 22
-	colTask     = 30
+	colRepo     = 12
+	colModel    = 12
+	colBranch   = 18
+	colTask     = 24
 	colCost     = 8
 	colCI       = 4
 	colConflict = 5
@@ -41,6 +43,8 @@ func renderDashboard(m Model) string {
 		padRight("ID", colID) +
 			padRight("Mode", colMode) +
 			padRight("Status", colStatus) +
+			padRight("Repo", colRepo) +
+			padRight("Model", colModel) +
 			padRight("Branch", colBranch) +
 			padRight("Task", colTask) +
 			padRight("Cost", colCost) +
@@ -51,7 +55,7 @@ func renderDashboard(m Model) string {
 	b.WriteString("\n")
 
 	// Separator.
-	totalWidth := colID + colMode + colStatus + colBranch + colTask + colCost + colCI + colConflict
+	totalWidth := colID + colMode + colStatus + colRepo + colModel + colBranch + colTask + colCost + colCI + colConflict
 	b.WriteString(separatorStyle.Render(strings.Repeat("─", totalWidth)))
 	b.WriteString("\n")
 
@@ -131,6 +135,8 @@ func renderAgentRow(a Agent) string {
 	return padRight(truncate(id, colID), colID) +
 		padRight(truncate(a.Mode, colMode), colMode) +
 		padRight(truncate(status, colStatus), colStatus) +
+		padRight(truncate(a.Repo, colRepo), colRepo) +
+		padRight(truncate(a.Model, colModel), colModel) +
 		padRight(truncate(a.Branch, colBranch), colBranch) +
 		padRight(truncate(a.Task, colTask), colTask) +
 		padRight(truncate(a.Cost, colCost), colCost) +
