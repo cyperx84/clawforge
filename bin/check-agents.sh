@@ -226,8 +226,10 @@ When complete:
   # Update status
   if [[ "$new_status" != "$status" ]] && ! $DRY_RUN; then
     registry_update "$id" "status" "\"$new_status\""
-    if [[ "$new_status" == "done" || "$new_status" == "failed" ]]; then
+    if [[ "$new_status" == "done" || "$new_status" == "failed" || "$new_status" == "timeout" || "$new_status" == "cancelled" ]]; then
       registry_update "$id" "completedAt" "$(epoch_ms)"
+      "${SCRIPT_DIR}/on-complete.sh" "$id" 2>/dev/null &
+      log_info "Fired on-complete for $id ($new_status)"
     fi
   fi
 
@@ -326,6 +328,15 @@ if $DAEMON; then
       if [[ "$new_status" != "$status" ]]; then
         registry_update "$id" "status" "\"$new_status\""
         log_info "Daemon: $id status changed: $status → $new_status"
+
+        # Fire completion hooks on terminal states
+        case "$new_status" in
+          done|failed|timeout|cancelled)
+            registry_update "$id" "completedAt" "$(epoch_ms)"
+            "${SCRIPT_DIR}/on-complete.sh" "$id" 2>/dev/null &
+            log_info "Daemon: fired on-complete for $id ($new_status)"
+            ;;
+        esac
       fi
     done <<< "$TASKS"
   done
