@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v0.4 — Multi-Mode Coding Workflow
+# ClawForge v0.5 — Multi-Mode Coding Workflow + Observability
 
 ## Overview
 
@@ -21,9 +21,21 @@ ClawForge manages coding agents (Claude Code, Codex) running in tmux sessions on
 - **Review** — Quality gate on an existing PR (analysis only)
 - **Swarm** — Parallel multi-agent orchestration
 
-Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard`.
+Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard` and new observability commands: `cost`, `conflicts`, `templates`.
 
 ## Quick Start
+
+
+### New in v0.5
+
+```bash
+clawforge dashboard                 # TUI with vim keybindings + ASCII animation
+clawforge cost --summary            # token/cost rollup
+clawforge conflicts                 # overlap/conflict tracking
+clawforge templates                 # built-in/custom workflow templates
+clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
+clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
 
 ### Sprint (single agent)
 
