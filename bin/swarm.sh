@@ -32,6 +32,8 @@ Flags:
   --json               Output structured JSON
   --notify             Send OpenClaw event on completion
   --webhook <url>      POST completion payload to URL
+  --auto-clean         Clean up worktrees+sessions on completion
+  --timeout <minutes>  Kill agents after N minutes
   --dry-run            Show decomposition plan without spawning
   --yes                Skip RAM confirmation prompt
   --help               Show this help

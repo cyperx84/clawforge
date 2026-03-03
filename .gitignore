@@ -16,3 +16,4 @@ build/
 tui/tui
 bin/clawforge-dashboard
 registry/completed-tasks.jsonl
+registry/.lock*

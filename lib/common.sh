@@ -38,6 +38,25 @@ _ensure_registry() {
   fi
 }
 
+
+# ── Registry file locking ──────────────────────────────────────────────
+REGISTRY_LOCK="${CLAWFORGE_DIR}/registry/.lock"
+
+_with_lock() {
+  mkdir -p "$(dirname "$REGISTRY_LOCK")"
+  local fd=200
+  eval "exec ${fd}>"$REGISTRY_LOCK""
+  if ! flock -w 5 $fd 2>/dev/null; then
+    log_error "Registry lock timeout — another clawforge process may be writing"
+    return 1
+  fi
+}
+
+_unlock() {
+  local fd=200
+  flock -u $fd 2>/dev/null || true
+}
+
 registry_add() {
   local task_json="$1"
   _ensure_registry
@@ -223,4 +242,22 @@ sanitize_branch() {
 
 epoch_ms() {
   python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo "$(date +%s)000"
+}
+
+# ── Disk space check ──────────────────────────────────────────────────
+disk_check() {
+  local dir="${1:-.}"
+  local warn_gb="${2:-5}"
+  local error_gb="${3:-1}"
+  local avail_kb
+  avail_kb=$(df -k "$dir" 2>/dev/null | awk 'NR==2{print $4}')
+  [[ -z "$avail_kb" ]] && return 0
+  local avail_gb=$((avail_kb / 1048576))
+  if [[ $avail_gb -lt $error_gb ]]; then
+    log_error "Disk space critically low: ${avail_gb}GB free (need ${error_gb}GB minimum)"
+    return 1
+  elif [[ $avail_gb -lt $warn_gb ]]; then
+    log_warn "Disk space low: ${avail_gb}GB free (warning threshold: ${warn_gb}GB)"
+  fi
+  return 0
 }

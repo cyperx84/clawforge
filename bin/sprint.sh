@@ -32,6 +32,8 @@ Flags:
   --json               Output structured JSON
   --notify             Send OpenClaw event on completion
   --webhook <url>      POST completion payload to URL
+  --auto-clean         Clean up worktree+session on completion
+  --timeout <minutes>  Kill agent after N minutes
   --dry-run            Preview what would happen
   --help               Show this help
 
@@ -47,6 +49,8 @@ EOF
 # ── Parse args ────────────────────────────────────────────────────────
 REPO="" TASK="" BRANCH="" AGENT="" MODEL="" QUICK=false AUTO_MERGE=false DRY_RUN=false
 TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK="" ROUTING=""
+AUTO_CLEAN=false
+TIMEOUT_MIN=""
 POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
@@ -56,6 +60,8 @@ while [[ $# -gt 0 ]]; do
     --agent)          AGENT="$2"; shift 2 ;;
     --model)          MODEL="$2"; shift 2 ;;
     --routing)        ROUTING="$2"; shift 2 ;;
+    --auto-clean)     AUTO_CLEAN=true; shift ;;
+    --timeout)        TIMEOUT_MIN="$2"; shift 2 ;;
     --auto-merge)     AUTO_MERGE=true; shift ;;
     --template)       TEMPLATE="$2"; shift 2 ;;
     --ci-loop)        CI_LOOP=true; shift ;;
@@ -196,6 +202,9 @@ fi
 PROMPT=$("${SCRIPT_DIR}/scope-task.sh" --task "$TASK" 2>/dev/null || echo "$TASK")
 
 # ── Step 2: Spawn ─────────────────────────────────────────────────────
+# Disk space check
+disk_check "$REPO_ABS" || { log_error "Aborting due to low disk space"; exit 1; }
+
 log_info "Step 2: Spawning agent..."
 # Apply routing model for implement phase (--model overrides routing)
 SPAWN_MODEL="$MODEL"
@@ -219,6 +228,33 @@ $AUTO_MERGE && registry_update "$SAFE_BRANCH" "auto_merge" 'true'
 $QUICK && registry_update "$SAFE_BRANCH" "skip_review" 'true'
 $CI_LOOP && registry_update "$SAFE_BRANCH" "ci_loop" 'true'
 [[ -n "$BUDGET" ]] && registry_update "$SAFE_BRANCH" "budget" "$BUDGET"
+
+
+# ── Signal trap cleanup ──────────────────────────────────────────────
+WATCHDOG_PID=""
+_sprint_cleanup() {
+  log_warn "Sprint interrupted. Cleaning up..."
+  registry_update "$SAFE_BRANCH" "status" '"cancelled"'
+  if tmux has-session -t "agent-${SAFE_BRANCH}" 2>/dev/null; then
+    tmux kill-session -t "agent-${SAFE_BRANCH}" 2>/dev/null || true
+  fi
+  [[ -n "$WATCHDOG_PID" ]] && kill "$WATCHDOG_PID" 2>/dev/null || true
+  echo "Task #${SHORT_ID} cancelled."
+  exit 130
+}
+trap _sprint_cleanup SIGINT SIGTERM
+
+# ── Watchdog timeout ─────────────────────────────────────────────────
+if [[ -n "$TIMEOUT_MIN" ]]; then
+  log_info "Watchdog: will kill agent after ${TIMEOUT_MIN} minutes"
+  (
+    sleep $((TIMEOUT_MIN * 60))
+    log_warn "Timeout reached (${TIMEOUT_MIN}m). Stopping agent..."
+    registry_update "$SAFE_BRANCH" "status" '"timeout"'
+    tmux kill-session -t "agent-${SAFE_BRANCH}" 2>/dev/null || true
+  ) &
+  WATCHDOG_PID=$!
+fi
 
 # ── Step 4: Notify ────────────────────────────────────────────────────
 "${SCRIPT_DIR}/notify.sh" --type task-started --description "$TASK" --dry-run 2>/dev/null || true
@@ -271,3 +307,14 @@ else
   [[ -n "$BUDGET" ]] && echo "  Budget cap: \$$BUDGET"
   echo "  Tip: Run 'clawforge watch --daemon' in another pane for auto-monitoring"
 fi
+
+# ── Auto-clean on completion ─────────────────────────────────────────
+if $AUTO_CLEAN; then
+  log_info "Auto-clean enabled. Will clean on task completion."
+  # Note: actual cleanup happens when task reaches "done" status
+  registry_update "$SAFE_BRANCH" "auto_clean" 'true'
+fi
+
+# Kill watchdog if still running
+[[ -n "$WATCHDOG_PID" ]] && kill "$WATCHDOG_PID" 2>/dev/null || true
+trap - SIGINT SIGTERM
