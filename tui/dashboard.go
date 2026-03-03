@@ -103,6 +103,25 @@ func renderDashboard(m Model) string {
 		}
 	}
 
+	// Preview pane (if active).
+	if m.showPreview {
+		agents := m.filteredAgents()
+		if len(agents) > 0 && m.selected < len(agents) {
+			selAgent := agents[m.selected]
+			b.WriteString("\n")
+			previewHeader := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")).Bold(true).Render(
+				fmt.Sprintf("── Preview: %s ──", selAgent.ID))
+			b.WriteString(previewHeader)
+			b.WriteString("\n")
+			if selAgent.Preview != "" {
+				b.WriteString(lipgloss.NewStyle().Faint(true).Render(selAgent.Preview))
+			} else {
+				b.WriteString(lipgloss.NewStyle().Faint(true).Render("(no output / not running)"))
+			}
+			b.WriteString("\n")
+		}
+	}
+
 	// Steer input (if active).
 	if m.steerMode {
 		b.WriteString("\n")

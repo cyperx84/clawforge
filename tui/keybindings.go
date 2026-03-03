@@ -139,6 +139,10 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "p":
+		m.showPreview = !m.showPreview
+		return m, nil
+
 	case "n":
 		// Nudge selected running agent with a lightweight progress prompt.
 		if count > 0 {
@@ -203,6 +207,7 @@ func renderHelpOverlay(width int) string {
 		{"1/2/3", "Views: all / running / finished"},
 		{"Tab", "Cycle views"},
 		{"n", "Nudge selected running agent"},
+		{"p", "Toggle output preview pane"},
 		{"r", "Force refresh"},
 		{"g/G", "Go to top/bottom"},
 		{"?", "Toggle help overlay"},

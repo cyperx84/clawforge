@@ -25,6 +25,7 @@ Keybindings:
   1/2/3        Views: all / running / finished
   Tab          Cycle views
   n            Nudge selected running agent
+  p            Toggle output preview pane
   r            Force refresh
   ?            Show help overlay
   q            Quit dashboard`
