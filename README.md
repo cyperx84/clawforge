@@ -183,6 +183,7 @@ Full docs live in [`docs/`](./docs/README.md):
 - [Configuration](./docs/configuration.md)
 - [Troubleshooting](./docs/troubleshooting.md)
 - [FAQ](./docs/faq.md)
+- [Changelog](./CHANGELOG.md)
 
 ## Quick Start
 

@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v0.8 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v1.0 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -35,6 +35,15 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v0.9
+
+```bash
+clawforge logs 1                    # Capture agent output from tmux
+clawforge logs 1 --follow           # Live stream agent output
+clawforge on-complete 1             # Fire webhooks + notify on task finish
+clawforge dashboard                 # p = toggle live preview pane
 ```
 
 ### New in v0.8
