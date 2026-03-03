@@ -49,6 +49,9 @@ Workflow Modes:
 
 Management:
   status      Show all tracked tasks with short IDs
+  resume      Resume a failed/timeout task from where it left off
+  diff        Show git diff for a task without attaching
+  pr          Create a PR from a task branch
   attach      Attach to a running agent's tmux session
   steer       Send course correction to a running agent
   stop        Stop a running agent
@@ -219,7 +222,10 @@ case "$COMMAND" in
   init)       exec "${BIN_DIR}/init.sh" "$@" ;;
   history)    exec "${BIN_DIR}/history.sh" "$@" ;;
   eval)       exec "${BIN_DIR}/eval.sh" "$@" ;;
-  doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
+doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
+  resume)     exec "${BIN_DIR}/resume.sh" "$@" ;;
+  diff)       exec "${BIN_DIR}/diff.sh" "$@" ;;
+  pr)         exec "${BIN_DIR}/pr.sh" "$@" ;;
   logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
   on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
 
