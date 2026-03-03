@@ -1,0 +1,79 @@
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-tap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+      - name: Get tarball SHA256
+        id: sha
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          URL="https://github.com/cyperx84/clawforge/archive/refs/tags/${TAG}.tar.gz"
+          SHA=$(curl -sL "$URL" | sha256sum | cut -d" " -f1)
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Update Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: cyperx84/homebrew-tap
+          token: ${{ secrets.TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Write updated formula
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          SHA="${{ steps.sha.outputs.sha256 }}"
+          cat > homebrew-tap/Formula/clawforge.rb << EOF
+          class Clawforge < Formula
+            desc "Multi-mode coding workflow CLI for orchestrating AI coding agents"
+            homepage "https://github.com/cyperx84/clawforge"
+            url "https://github.com/cyperx84/clawforge/archive/refs/tags/${TAG}.tar.gz"
+            sha256 "${SHA}"
+            license "MIT"
+            head "https://github.com/cyperx84/clawforge.git", branch: "main"
+
+            depends_on "bash"
+            depends_on "git"
+            depends_on "gh"
+            depends_on "jq"
+            depends_on "tmux"
+
+            def install
+              libexec.install Dir["*"]
+              bin.install_symlink libexec/"bin/clawforge" => "clawforge"
+              if File.exist?("bin/clawforge-dashboard")
+                bin.install "bin/clawforge-dashboard"
+              end
+            end
+
+            test do
+              assert_match "clawforge v", shell_output("#{bin}/clawforge version")
+              assert_match "Usage:", shell_output("#{bin}/clawforge help")
+            end
+          end
+          EOF
+          # Fix indentation (heredoc adds leading spaces)
+          cd homebrew-tap
+          sed -i 's/^          //' Formula/clawforge.rb
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/clawforge.rb
+          git diff --cached --quiet || git commit -m "Update clawforge to ${{ steps.version.outputs.tag }}"
+          git push
