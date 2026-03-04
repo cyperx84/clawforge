@@ -1,5 +1,5 @@
 {
-  "name": "@cyperx84/clawforge",
+  "name": "@cyperx/clawforge",
   "version": "1.1.0",
   "description": "Multi-mode coding workflow CLI for orchestrating AI coding agents",
   "bin": {
