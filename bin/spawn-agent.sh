@@ -82,7 +82,15 @@ if [[ -n "$AFTER" ]]; then
 fi
 
 # ── Resolve settings ──────────────────────────────────────────────────
-RESOLVED_AGENT=$(detect_agent "${AGENT:-}")
+if ! RESOLVED_AGENT=$(detect_agent "${AGENT:-}" 2>/dev/null); then
+  if $DRY_RUN; then
+    RESOLVED_AGENT="${AGENT:-claude}"
+    log_warn "No local agent binary found; using '$RESOLVED_AGENT' for dry-run preview"
+  else
+    log_error "No coding agent found (need claude or codex)"
+    exit 1
+  fi
+fi
 EFFORT="${EFFORT:-$(config_get default_effort high)}"
 
 if [[ -z "$MODEL" ]]; then
