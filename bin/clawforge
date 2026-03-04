@@ -75,6 +75,12 @@ Observability (v0.9):
   logs        Capture agent output from tmux (without attaching)
   on-complete Fire completion hooks for finished tasks
 
+Power Features (v1.2):
+  config      Manage user configuration (~/.clawforge/config.json)
+  multi-review Run PR through multiple models and compare feedback
+  summary     AI-generated summary of what an agent did
+  parse-cost  Parse real cost/token data from agent output
+
 Evaluation (v0.6.2):
   eval        Run-eval logging and weekly summaries
 
@@ -226,6 +232,10 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   resume)     exec "${BIN_DIR}/resume.sh" "$@" ;;
   diff)       exec "${BIN_DIR}/diff.sh" "$@" ;;
   pr)         exec "${BIN_DIR}/pr.sh" "$@" ;;
+  config)     exec "${BIN_DIR}/config.sh" "$@" ;;
+  multi-review) exec "${BIN_DIR}/multi-review.sh" "$@" ;;
+  summary)    exec "${BIN_DIR}/summary.sh" "$@" ;;
+  parse-cost) exec "${BIN_DIR}/parse-cost.sh" "$@" ;;
   logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
   on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
 

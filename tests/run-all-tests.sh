@@ -11,7 +11,7 @@ echo ""
 
 TOTAL_PASS=0
 TOTAL_FAIL=0
-TESTS=(test-cli test-registry test-spawn test-watch test-review test-scope test-notify test-merge test-clean test-learn test-foundation test-modes test-management test-dashboard test-tui test-cost test-templates test-conflicts test-ci-loop test-openclaw test-multi-repo test-routing test-memory test-init test-history test-eval test-reliability test-observability test-practical)
+TESTS=(test-cli test-registry test-spawn test-watch test-review test-scope test-notify test-merge test-clean test-learn test-foundation test-modes test-management test-dashboard test-tui test-cost test-templates test-conflicts test-ci-loop test-openclaw test-multi-repo test-routing test-memory test-init test-history test-eval test-reliability test-observability test-practical test-power)
 
 for test in "${TESTS[@]}"; do
   echo "────────────────────────────────────────"

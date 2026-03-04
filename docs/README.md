@@ -23,3 +23,4 @@ ClawForge is a multi-mode coding workflow CLI for orchestrating coding agents in
 - v0.8: TUI view modes + nudge, swarm hardening
 - v0.9: observability v2 (logs, on-complete, TUI preview)
 - v1.0: milestone release
+- v1.2: power features (config, multi-model review, summary, cost parsing)

@@ -96,7 +96,7 @@ assert_contains "help shows Reliability" "Reliability" "$cli_help"
 # Test 11: version bump
 echo "Test 11: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-assert_eq "version is 1.1.0" "1.1.0" "$version"
+assert_eq "version is 1.2.0" "1.2.0" "$version"
 
 # Test 12: doctor --fix runs without errors
 echo "Test 12: doctor --fix"

@@ -16,9 +16,21 @@ log_error() { echo "[ERROR] $(date +%H:%M:%S) $*" >&2; }
 log_debug() { [[ "${CLAWFORGE_DEBUG:-0}" == "1" ]] && echo "[DEBUG] $(date +%H:%M:%S) $*" >&2 || true; }
 
 # ── Config ─────────────────────────────────────────────────────────────
+USER_CONFIG_FILE="${HOME}/.clawforge/config.json"
+
 config_get() {
   local key="$1"
   local default="${2:-}"
+  # User config takes priority
+  if [[ -f "$USER_CONFIG_FILE" ]]; then
+    local val
+    val=$(jq -r ".$key // empty" "$USER_CONFIG_FILE" 2>/dev/null)
+    if [[ -n "$val" ]]; then
+      echo "$val"
+      return
+    fi
+  fi
+  # Fall back to project defaults
   if [[ -f "$CONFIG_FILE" ]]; then
     local val
     val=$(jq -r ".$key // empty" "$CONFIG_FILE" 2>/dev/null)
@@ -28,6 +40,33 @@ config_get() {
     fi
   fi
   echo "$default"
+}
+
+config_set() {
+  local key="$1" value="$2"
+  mkdir -p "$(dirname "$USER_CONFIG_FILE")"
+  if [[ ! -f "$USER_CONFIG_FILE" ]]; then
+    echo '{}' > "$USER_CONFIG_FILE"
+  fi
+  local tmp
+  tmp=$(mktemp)
+  jq --arg k "$key" --arg v "$value" '.[$k] = $v' "$USER_CONFIG_FILE" > "$tmp" && mv "$tmp" "$USER_CONFIG_FILE"
+}
+
+config_list() {
+  echo "── User config (~/.clawforge/config.json) ──"
+  if [[ -f "$USER_CONFIG_FILE" ]]; then
+    jq '.' "$USER_CONFIG_FILE"
+  else
+    echo "(not created yet)"
+  fi
+  echo ""
+  echo "── Project defaults (config/defaults.json) ──"
+  if [[ -f "$CONFIG_FILE" ]]; then
+    jq '.' "$CONFIG_FILE"
+  else
+    echo "(not found)"
+  fi
 }
 
 # ── Registry helpers ───────────────────────────────────────────────────
