@@ -12,13 +12,23 @@
     "type": "git",
     "url": "https://github.com/cyperx84/clawforge.git"
   },
-  "keywords": ["cli", "coding", "agents", "orchestration", "tmux", "worktree"],
+  "keywords": [
+    "cli",
+    "coding",
+    "agents",
+    "orchestration",
+    "tmux",
+    "worktree"
+  ],
   "author": "cyperx84",
   "license": "MIT",
   "engines": {
     "node": ">=18"
   },
-  "os": ["darwin", "linux"],
+  "os": [
+    "darwin",
+    "linux"
+  ],
   "files": [
     "bin/",
     "lib/",
