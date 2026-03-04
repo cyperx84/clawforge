@@ -1,5 +1,5 @@
 [project]
-name = "clawforge"
+name = "clawforge-cli"
 version = "1.2.0"
 description = "Multi-mode coding workflow CLI for orchestrating AI coding agents"
 readme = "README.md"
