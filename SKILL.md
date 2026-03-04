@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v1.0 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v1.2 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -35,6 +35,24 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v1.2
+
+```bash
+clawforge config set default_agent claude    # Persistent user config
+clawforge config set auto_clean true         # No more flags every time
+clawforge multi-review --pr 42               # Multi-model PR review
+clawforge summary 1                          # AI summary of agent work
+clawforge parse-cost all --update            # Real cost tracking from output
+```
+
+### New in v1.1
+
+```bash
+clawforge resume 1                           # Restart failed task
+clawforge diff 1                             # See changes without attaching
+clawforge pr 1                               # Create PR from task
 ```
 
 ### New in v0.9

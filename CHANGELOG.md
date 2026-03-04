@@ -1,5 +1,38 @@
 # Changelog
 
+## v1.2.0 — Power Features
+
+### User Config (`clawforge config`)
+- Persistent user config at `~/.clawforge/config.json`
+- `config show|get|set|unset|init|path`
+- User config overrides project defaults
+- Configurable defaults for agent, model, timeout, auto-clean, routing, review models
+
+### Multi-Model Review (`clawforge multi-review`)
+- Run PRs through multiple AI models in parallel
+- Auto-generates comparison report with severity counts
+- Configurable model list via `review_models` config
+- Supports `--diff-only`, `--output`, `--json`
+
+### AI Summary (`clawforge summary`)
+- LLM-generated summary of what an agent accomplished
+- Gathers git diff + tmux output as context
+- Multiple output formats: markdown, text, JSON
+- Save to file with `--save`
+
+### Real Cost Parsing (`clawforge parse-cost`)
+- Scrapes Claude Code and Codex output for actual token/cost data
+- Supports patterns from both agent CLIs
+- `--update` writes to costs.jsonl registry
+- `parse-cost all` processes all running agents at once
+
+## v1.1.0 — Practical Commands
+
+- `resume` — restart failed tasks from existing worktree
+- `diff` — show changes without attaching
+- `pr` — create PR from task branch
+- Watch daemon fires on-complete hooks automatically
+
 ## v1.0.0 — Milestone Release
 
 ClawForge is feature-complete for single-user agent orchestration.

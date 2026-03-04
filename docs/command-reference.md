@@ -149,3 +149,45 @@ r          Force refresh
 ?          Help overlay
 q          Quit
 ```
+
+### config (v1.2)
+```bash
+clawforge config show                          # Show all config
+clawforge config get default_agent             # Get single value
+clawforge config set default_agent claude      # Set value
+clawforge config set auto_clean true           # Enable auto-clean by default
+clawforge config set default_timeout 30        # 30-min timeout by default
+clawforge config set review_models "claude-sonnet-4-5,gpt-5.2-codex,claude-opus-4"
+clawforge config unset default_timeout         # Remove a key
+clawforge config init                          # Create default config
+clawforge config path                          # Show config file location
+```
+
+### multi-review (v1.2)
+```bash
+clawforge multi-review --pr 42                                    # Review with default models
+clawforge multi-review --pr 42 --models "sonnet,opus,codex"       # Custom model list
+clawforge multi-review --pr 42 --output /tmp/reviews              # Save reviews
+clawforge multi-review --pr 42 --diff-only                        # Show disagreements only
+clawforge multi-review --pr 42 --json                             # JSON output
+clawforge multi-review --pr 42 --dry-run                          # Preview
+```
+
+### summary (v1.2)
+```bash
+clawforge summary 1                           # Markdown summary of what agent did
+clawforge summary 1 --format json             # JSON output
+clawforge summary 1 --format text             # Plain text
+clawforge summary 1 --include-diff            # Include diff stats
+clawforge summary 1 --save /tmp/summary.md    # Save to file
+clawforge summary 1 --model claude-opus-4     # Use specific model
+```
+
+### parse-cost (v1.2)
+```bash
+clawforge parse-cost 1                        # Parse cost from agent output
+clawforge parse-cost all                      # Parse all running agents
+clawforge parse-cost all --update             # Parse + write to costs.jsonl
+clawforge parse-cost 1 --json                 # JSON output
+clawforge parse-cost 1 --lines 500            # Scan more output lines
+```
