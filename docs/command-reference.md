@@ -228,3 +228,11 @@ clawforge completions fish                   # Install fish completions
 ```bash
 clawforge sprint --repo . --task "run tests" --after 1   # Run after task #1 completes
 ```
+
+### web (v1.4)
+```bash
+clawforge web                     # Start on http://localhost:9876
+clawforge web --port 8080         # Custom port
+clawforge web --open              # Start + open browser
+clawforge web --build             # Force rebuild binary
+```

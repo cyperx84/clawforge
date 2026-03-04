@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.0 — Web Dashboard
+
+### Web Dashboard (`clawforge web`)
+- Lightweight Go HTTP server + embedded single-page app
+- Real-time task monitoring with 3-second auto-refresh
+- Task detail panel with live tmux agent output preview
+- Filter views: All / Running / Done / Failed (keyboard: 1/2/3/4)
+- Stats cards: total, running, done, failed, cost
+- Mobile-responsive — monitor agents from your phone
+- Dark theme, GitHub-inspired design
+- Single binary, no external dependencies
+
 ## v1.3.0 — Developer Experience
 
 ### Task Dependencies

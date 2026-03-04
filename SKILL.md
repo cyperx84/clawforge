@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v1.3 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v1.4 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -35,6 +35,13 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v1.4
+
+```bash
+clawforge web                     # Launch web dashboard (http://localhost:9876)
+clawforge web --port 8080 --open  # Custom port + auto-open browser
 ```
 
 ### New in v1.3
