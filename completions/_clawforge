@@ -1,0 +1,82 @@
+#compdef clawforge
+
+_clawforge() {
+  local -a commands
+  commands=(
+    'sprint:Single focused task'
+    'swarm:Decompose into parallel subtasks'
+    'review:Review a PR with AI'
+    'scope:Analyze task scope and complexity'
+    'spawn:Low-level agent spawn'
+    'stop:Stop a running agent'
+    'steer:Send message to running agent'
+    'attach:Attach to agent tmux session'
+    'check:Check agent status'
+    'status:Show task status overview'
+    'cost:Show cost summary'
+    'conflicts:Detect merge conflicts'
+    'merge:Merge completed task branches'
+    'history:Show task history'
+    'eval:Evaluate task output'
+    'learn:Extract learnings from task'
+    'clean:Clean up completed tasks'
+    'templates:Manage task templates'
+    'init:Initialize clawforge in a repo'
+    'routing:Show routing decisions'
+    'resume:Resume a failed task'
+    'diff:Show changes from a task'
+    'pr:Create PR from task'
+    'doctor:Diagnose and fix issues'
+    'logs:Capture agent output'
+    'on-complete:Fire completion hooks'
+    'dashboard:Launch TUI dashboard'
+    'config:Manage configuration'
+    'multi-review:Multi-model PR review'
+    'summary:AI summary of agent work'
+    'parse-cost:Parse cost from agent output'
+    'profile:Manage agent profiles'
+    'replay:Re-run a completed task'
+    'export:Export task history'
+    'completions:Install shell completions'
+    'version:Show version'
+    'help:Show help'
+  )
+
+  _arguments \
+    '1:command:->command' \
+    '*::arg:->args'
+
+  case "$state" in
+    command)
+      _describe 'command' commands
+      ;;
+    args)
+      case "$words[1]" in
+        config)
+          _values 'subcommand' show get set unset init path
+          ;;
+        profile)
+          _values 'subcommand' list show create delete use
+          ;;
+        *)
+          _arguments \
+            '--repo[Repository path]:path:_files -/' \
+            '--branch[Branch name]:branch:' \
+            '--task[Task description]:task:' \
+            '--agent[Agent]:agent:(claude codex)' \
+            '--model[Model]:model:' \
+            '--effort[Effort level]:effort:(high medium low)' \
+            '--timeout[Timeout minutes]:minutes:' \
+            '--after[Wait for task]:task_id:' \
+            '--auto-clean[Auto-clean on completion]' \
+            '--notify[Enable notifications]' \
+            '--dry-run[Dry run]' \
+            '--json[JSON output]' \
+            '--help[Show help]'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_clawforge "$@"

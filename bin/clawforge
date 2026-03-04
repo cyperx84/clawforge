@@ -81,6 +81,12 @@ Power Features (v1.2):
   summary     AI-generated summary of what an agent did
   parse-cost  Parse real cost/token data from agent output
 
+Developer Experience (v1.3):
+  profile     Manage reusable agent profiles (presets)
+  replay      Re-run a completed task with same parameters
+  export      Export task history as markdown/JSON report
+  completions Install shell tab completions (bash/zsh/fish)
+
 Evaluation (v0.6.2):
   eval        Run-eval logging and weekly summaries
 
@@ -236,6 +242,10 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   multi-review) exec "${BIN_DIR}/multi-review.sh" "$@" ;;
   summary)    exec "${BIN_DIR}/summary.sh" "$@" ;;
   parse-cost) exec "${BIN_DIR}/parse-cost.sh" "$@" ;;
+  profile)    exec "${BIN_DIR}/profile.sh" "$@" ;;
+  replay)     exec "${BIN_DIR}/replay.sh" "$@" ;;
+  export)     exec "${BIN_DIR}/export.sh" "$@" ;;
+  completions) exec "${BIN_DIR}/completions.sh" "$@" ;;
   logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
   on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
 

@@ -191,3 +191,40 @@ clawforge parse-cost all --update             # Parse + write to costs.jsonl
 clawforge parse-cost 1 --json                 # JSON output
 clawforge parse-cost 1 --lines 500            # Scan more output lines
 ```
+
+### profile (v1.3)
+```bash
+clawforge profile list                                           # List all profiles
+clawforge profile create fast --agent claude --model haiku --timeout 5  # Create profile
+clawforge profile show fast                                      # Show profile details
+clawforge profile use fast                                       # Print spawn flags
+clawforge profile delete fast                                    # Delete profile
+clawforge sprint --repo . --task "fix" $(clawforge profile use fast)    # Use in sprint
+```
+
+### replay (v1.3)
+```bash
+clawforge replay 1                           # Replay task #1
+clawforge replay 1 --model claude-opus-4     # Replay with different model
+clawforge replay 1 --dry-run                 # Preview
+```
+
+### export (v1.3)
+```bash
+clawforge export                             # Full markdown report
+clawforge export --format json               # JSON dump
+clawforge export --status done --save report.md  # Filtered + saved
+clawforge export --since 2026-03-01          # Date range
+```
+
+### completions (v1.3)
+```bash
+clawforge completions bash                   # Install bash completions
+clawforge completions zsh                    # Install zsh completions
+clawforge completions fish                   # Install fish completions
+```
+
+### Task Dependencies (v1.3)
+```bash
+clawforge sprint --repo . --task "run tests" --after 1   # Run after task #1 completes
+```

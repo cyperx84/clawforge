@@ -17,13 +17,14 @@ Options:
   --agent <name>       Agent to use: claude or codex (default: auto-detect)
   --model <model>      Model override
   --effort <level>     Effort level: high, medium, low (default: high)
+  --after <id>         Wait for task <id> to complete before spawning
   --dry-run            Do everything except launch the agent
   --help               Show this help
 EOF
 }
 
 # ── Parse args ─────────────────────────────────────────────────────────
-REPO="" BRANCH="" TASK="" AGENT="" MODEL="" EFFORT="" DRY_RUN=false
+REPO="" BRANCH="" TASK="" AGENT="" MODEL="" EFFORT="" DRY_RUN=false AFTER=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,6 +34,7 @@ while [[ $# -gt 0 ]]; do
     --agent)    AGENT="$2"; shift 2 ;;
     --model)    MODEL="$2"; shift 2 ;;
     --effort)   EFFORT="$2"; shift 2 ;;
+    --after)    AFTER="$2"; shift 2 ;;
     --dry-run)  DRY_RUN=true; shift ;;
     --help|-h)  usage; exit 0 ;;
     *)          log_error "Unknown option: $1"; usage; exit 1 ;;
@@ -44,6 +46,40 @@ done
 [[ -z "$BRANCH" ]] && { log_error "--branch is required"; usage; exit 1; }
 [[ -z "$TASK" ]]   && { log_error "--task is required"; usage; exit 1; }
 [[ -d "$REPO/.git" ]] || [[ -f "$REPO/.git" ]] || { log_error "Not a git repo: $REPO"; exit 1; }
+
+# ── Wait for dependency ──────────────────────────────────────────────
+if [[ -n "$AFTER" ]]; then
+  log_info "Waiting for task $AFTER to complete before spawning..."
+  WAIT_TIMEOUT=${CLAWFORGE_DEP_TIMEOUT:-3600}  # 1 hour default
+  ELAPSED=0
+  INTERVAL=5
+  while [[ $ELAPSED -lt $WAIT_TIMEOUT ]]; do
+    DEP_STATUS=""
+    if [[ "$AFTER" =~ ^[0-9]+$ ]]; then
+      DEP_STATUS=$(jq -r --argjson sid "$AFTER" '.tasks[] | select(.short_id == $sid) | .status' "$REGISTRY_FILE" 2>/dev/null || true)
+    else
+      DEP_STATUS=$(jq -r --arg id "$AFTER" '.tasks[] | select(.id == $id) | .status' "$REGISTRY_FILE" 2>/dev/null || true)
+    fi
+    case "$DEP_STATUS" in
+      done)
+        log_info "Dependency $AFTER completed. Spawning..."
+        break
+        ;;
+      failed|timeout|cancelled)
+        log_error "Dependency $AFTER ended with status: $DEP_STATUS. Aborting spawn."
+        exit 1
+        ;;
+      *)
+        sleep $INTERVAL
+        ELAPSED=$((ELAPSED + INTERVAL))
+        ;;
+    esac
+  done
+  if [[ $ELAPSED -ge $WAIT_TIMEOUT ]]; then
+    log_error "Dependency wait timed out after ${WAIT_TIMEOUT}s"
+    exit 1
+  fi
+fi
 
 # ── Resolve settings ──────────────────────────────────────────────────
 RESOLVED_AGENT=$(detect_agent "${AGENT:-}")

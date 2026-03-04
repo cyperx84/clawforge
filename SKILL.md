@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v1.2 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v1.3 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -35,6 +35,17 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v1.3
+
+```bash
+clawforge profile create fast --agent claude --model haiku --timeout 5  # Reusable presets
+clawforge sprint --repo . --task "tests" --after 1                      # Task chaining
+clawforge replay 1                                                      # Re-run task
+clawforge export --format json --save report.json                       # Export history
+clawforge completions zsh                                               # Tab completions
+clawforge config set discord_webhook https://discord.com/api/webhooks/... # Notifications
 ```
 
 ### New in v1.2

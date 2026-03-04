@@ -181,6 +181,69 @@ else
   check OK "Disk check skipped (df unavailable)"
 fi
 
+# 7. Lock file health
+echo ""
+echo "── Lock Files ────────────────────────────"
+LOCK_FILE="${CLAWFORGE_DIR}/registry/.lock"
+if [[ -f "$LOCK_FILE" ]]; then
+  LOCK_PID=$(cat "$LOCK_FILE" 2>/dev/null || true)
+  if [[ -n "$LOCK_PID" ]] && ! kill -0 "$LOCK_PID" 2>/dev/null; then
+    check WARN "Stale lock file (PID $LOCK_PID not running)"
+    if $FIX; then
+      rm -f "$LOCK_FILE"
+      echo "    → Fixed: removed stale lock"
+      FIXED=$((FIXED+1))
+    fi
+  else
+    check OK "Lock file clean"
+  fi
+else
+  check OK "No lock file"
+fi
+
+# 8. Config validation
+echo ""
+echo "── Configuration ─────────────────────────"
+USER_CFG="${HOME}/.clawforge/config.json"
+if [[ -f "$USER_CFG" ]]; then
+  if jq empty "$USER_CFG" 2>/dev/null; then
+    KEY_COUNT=$(jq 'keys | length' "$USER_CFG")
+    check OK "User config valid ($KEY_COUNT keys)"
+  else
+    check ERROR "User config is malformed JSON"
+    if $FIX; then
+      cp "$USER_CFG" "${USER_CFG}.bak"
+      echo '{}' > "$USER_CFG"
+      echo "    → Fixed: reset config (backup at ${USER_CFG}.bak)"
+      FIXED=$((FIXED+1))
+    fi
+  fi
+else
+  check OK "No user config (using defaults)"
+fi
+
+# 9. Profiles directory
+PROFILES_DIR="${HOME}/.clawforge/profiles"
+if [[ -d "$PROFILES_DIR" ]]; then
+  PROFILE_COUNT=$(find "$PROFILES_DIR" -maxdepth 1 -name "*.json" 2>/dev/null | wc -l | tr -d ' ')
+  check OK "$PROFILE_COUNT agent profile(s) configured"
+  # Validate each profile
+  shopt -s nullglob 2>/dev/null || true
+  for pf in "$PROFILES_DIR"/*.json; do
+    [[ -f "$pf" ]] || continue
+    if ! jq empty "$pf" 2>/dev/null; then
+      check WARN "Malformed profile: $(basename "$pf" .json)"
+      if $FIX; then
+        rm "$pf"
+        echo "    → Fixed: removed malformed profile"
+        FIXED=$((FIXED+1))
+      fi
+    fi
+  done
+else
+  check OK "No profiles directory"
+fi
+
 # Summary
 echo ""
 echo "────────────────────────────────────────"
