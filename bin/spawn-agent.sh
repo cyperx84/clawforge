@@ -24,7 +24,7 @@ EOF
 }
 
 # ── Parse args ─────────────────────────────────────────────────────────
-REPO="" BRANCH="" TASK="" AGENT="" MODEL="" EFFORT="" DRY_RUN=false AFTER=""
+REPO="" BRANCH="" TASK="" AGENT="" MODEL="" EFFORT="" DRY_RUN=false AFTER="" DEP_ID=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -49,24 +49,25 @@ done
 
 # ── Wait for dependency ──────────────────────────────────────────────
 if [[ -n "$AFTER" ]]; then
-  log_info "Waiting for task $AFTER to complete before spawning..."
+  DEP_ID=$(resolve_task_id "$AFTER")
+  [[ -z "$DEP_ID" ]] && { log_error "Dependency '$AFTER' not found"; exit 1; }
+  log_info "Waiting for task $AFTER ($DEP_ID) to complete before spawning..."
   WAIT_TIMEOUT=${CLAWFORGE_DEP_TIMEOUT:-3600}  # 1 hour default
   ELAPSED=0
   INTERVAL=5
   while [[ $ELAPSED -lt $WAIT_TIMEOUT ]]; do
-    DEP_STATUS=""
-    if [[ "$AFTER" =~ ^[0-9]+$ ]]; then
-      DEP_STATUS=$(jq -r --argjson sid "$AFTER" '.tasks[] | select(.short_id == $sid) | .status' "$REGISTRY_FILE" 2>/dev/null || true)
-    else
-      DEP_STATUS=$(jq -r --arg id "$AFTER" '.tasks[] | select(.id == $id) | .status' "$REGISTRY_FILE" 2>/dev/null || true)
-    fi
+    DEP_STATUS=$(jq -r --arg id "$DEP_ID" '.tasks[] | select(.id == $id) | .status' "$REGISTRY_FILE" 2>/dev/null || true)
     case "$DEP_STATUS" in
       done)
         log_info "Dependency $AFTER completed. Spawning..."
         break
         ;;
-      failed|timeout|cancelled)
+      failed|timeout|cancelled|stopped)
         log_error "Dependency $AFTER ended with status: $DEP_STATUS. Aborting spawn."
+        exit 1
+        ;;
+      "")
+        log_error "Dependency $AFTER not found in registry."
         exit 1
         ;;
       *)

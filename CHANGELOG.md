@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.5.0 — Dependency Graph + Chaining
+
+### New
+- `clawforge deps` to visualize task dependencies and blocked tasks.
+  - `clawforge deps --blocked`
+  - `clawforge deps --json`
+- First-class `--after <id>` support in `sprint` and `swarm`.
+
+### Improved
+- Spawn now records `depends_on` in registry for dependency-aware tools/UI.
+- Dependency wait logic now resolves short/full IDs consistently and fails clearly on missing/terminal dependencies.
+
 ## v1.4.1 — CI Stability Hotfix
 
 ### Fixed

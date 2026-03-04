@@ -22,6 +22,7 @@ Flags:
   --repos <paths>      Comma-separated repo paths (one agent per repo, skips decomposition)
   --repos-file <path>  File with repo paths, one per line
   --routing <strategy> Model routing: auto, cheap, or quality
+  --after <id>         Wait for task <id> to complete before starting swarm
   --max-agents <N>     Cap parallel agents (default: 3)
   --agent <name>       Force specific agent for all sub-tasks
   --auto-merge         Merge each PR automatically after CI + review
@@ -48,7 +49,7 @@ EOF
 }
 
 # ── Parse args ────────────────────────────────────────────────────────
-REPO="" TASK="" MAX_AGENTS=3 AGENT="" AUTO_MERGE=false DRY_RUN=false SKIP_CONFIRM=false
+REPO="" TASK="" MAX_AGENTS=3 AGENT="" AUTO_MERGE=false DRY_RUN=false SKIP_CONFIRM=false AFTER=""
 TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK=""
 REPOS="" REPOS_FILE="" ROUTING="" MULTI_REPO=false AUTO_CLEAN=false TIMEOUT_MIN=""
 POSITIONAL=()
@@ -58,6 +59,7 @@ while [[ $# -gt 0 ]]; do
     --repos)          REPOS="$2"; shift 2 ;;
     --repos-file)     REPOS_FILE="$2"; shift 2 ;;
     --routing)        ROUTING="$2"; shift 2 ;;
+    --after)          AFTER="$2"; shift 2 ;;
     --max-agents)     MAX_AGENTS="$2"; shift 2 ;;
     --agent)          AGENT="$2"; shift 2 ;;
     --auto-merge)     AUTO_MERGE=true; shift ;;
@@ -135,6 +137,36 @@ if $MULTI_REPO; then
   REPO_LIST=("${RESOLVED_REPOS[@]}")
   # Use first repo as the "primary" for parent task
   REPO="${REPO_LIST[0]}"
+fi
+
+
+# ── Dependency wait (optional) ──────────────────────────────────────
+if [[ -n "$AFTER" ]]; then
+  DEP_ID=$(resolve_task_id "$AFTER")
+  [[ -z "$DEP_ID" ]] && { log_error "Dependency '$AFTER' not found"; exit 1; }
+  log_info "Waiting for task $AFTER ($DEP_ID) to complete before swarm starts..."
+  WAIT_TIMEOUT=${CLAWFORGE_DEP_TIMEOUT:-3600}
+  ELAPSED=0
+  INTERVAL=5
+  while [[ $ELAPSED -lt $WAIT_TIMEOUT ]]; do
+    DEP_STATUS=$(jq -r --arg id "$DEP_ID" '.tasks[] | select(.id == $id) | .status' "$REGISTRY_FILE" 2>/dev/null || true)
+    case "$DEP_STATUS" in
+      done) break ;;
+      failed|timeout|cancelled|stopped)
+        log_error "Dependency $AFTER ended with status: $DEP_STATUS. Aborting swarm."
+        exit 1
+        ;;
+      "")
+        log_error "Dependency $AFTER not found in registry."
+        exit 1
+        ;;
+      *) sleep $INTERVAL; ELAPSED=$((ELAPSED + INTERVAL)) ;;
+    esac
+  done
+  if [[ $ELAPSED -ge $WAIT_TIMEOUT ]]; then
+    log_error "Dependency wait timed out after ${WAIT_TIMEOUT}s"
+    exit 1
+  fi
 fi
 
 # ── Resolve repo (single-repo mode) ─────────────────────────────────
