@@ -117,7 +117,55 @@ if [[ -n "$WEBHOOK" ]]; then
   fi
 fi
 
-# 3. Auto-clean
+# 3. Discord/Slack webhook
+DISCORD_WEBHOOK=$(echo "$TASK_DATA" | jq -r '.discord_webhook // empty')
+if [[ -z "$DISCORD_WEBHOOK" ]]; then
+  DISCORD_WEBHOOK=$(config_get discord_webhook "")
+fi
+if [[ -n "$DISCORD_WEBHOOK" ]]; then
+  EMOJI="✅"
+  COLOR=5763719  # green
+  [[ "$STATUS" == "failed" ]] && { EMOJI="❌"; COLOR=15548997; }  # red
+  [[ "$STATUS" == "timeout" ]] && { EMOJI="⏰"; COLOR=16776960; }  # yellow
+  [[ "$STATUS" == "cancelled" ]] && { EMOJI="🚫"; COLOR=10070709; }  # grey
+
+  DISCORD_PAYLOAD=$(jq -cn \
+    --arg title "${EMOJI} ClawForge #${SHORT_ID} ${STATUS}" \
+    --arg desc "$DESC" \
+    --arg mode "$MODE" \
+    --arg status "$STATUS" \
+    --argjson color "$COLOR" \
+    '{embeds:[{title:$title,description:$desc,color:$color,fields:[{name:"Mode",value:$mode,inline:true},{name:"Status",value:$status,inline:true}]}]}')
+
+  if $DRY_RUN; then
+    echo "[dry-run] Would send Discord webhook"
+  else
+    curl -s -X POST -H "Content-Type: application/json" -d "$DISCORD_PAYLOAD" "$DISCORD_WEBHOOK" >/dev/null 2>&1 || log_warn "Discord webhook failed"
+    log_info "Sent Discord notification"
+  fi
+fi
+
+SLACK_WEBHOOK=$(echo "$TASK_DATA" | jq -r '.slack_webhook // empty')
+if [[ -z "$SLACK_WEBHOOK" ]]; then
+  SLACK_WEBHOOK=$(config_get slack_webhook "")
+fi
+if [[ -n "$SLACK_WEBHOOK" ]]; then
+  EMOJI="✅"
+  [[ "$STATUS" == "failed" ]] && EMOJI="❌"
+  [[ "$STATUS" == "timeout" ]] && EMOJI="⏰"
+  SLACK_PAYLOAD=$(jq -cn \
+    --arg text "${EMOJI} ClawForge #${SHORT_ID} ${STATUS}: ${DESC} (${MODE})" \
+    '{text:$text}')
+
+  if $DRY_RUN; then
+    echo "[dry-run] Would send Slack webhook"
+  else
+    curl -s -X POST -H "Content-Type: application/json" -d "$SLACK_PAYLOAD" "$SLACK_WEBHOOK" >/dev/null 2>&1 || log_warn "Slack webhook failed"
+    log_info "Sent Slack notification"
+  fi
+fi
+
+# 4. Auto-clean
 if [[ "$AUTO_CLEAN" == "true" ]]; then
   if $DRY_RUN; then
     echo "[dry-run] Would auto-clean task #${SHORT_ID}"
@@ -127,12 +175,12 @@ if [[ "$AUTO_CLEAN" == "true" ]]; then
   fi
 fi
 
-# 4. Mark hooks as fired
+# 5. Mark hooks as fired
 if ! $DRY_RUN; then
   registry_update "$TASK_ID" "hooks_fired" 'true' 2>/dev/null || true
 fi
 
-# 5. Log completion
+# 6. Log completion
 COMPLETION_LOG="${CLAWFORGE_DIR}/registry/completions.jsonl"
 if ! $DRY_RUN; then
   ENTRY=$(jq -cn \

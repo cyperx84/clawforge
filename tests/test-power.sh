@@ -121,7 +121,7 @@ assert_contains "help shows Power Features" "Power Features" "$cli_help"
 # Test 13: version
 echo "Test 13: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-assert_eq "version is 1.2.0" "1.2.0" "$version"
+assert_eq "version is 1.3.0" "1.3.0" "$version"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

@@ -1,5 +1,42 @@
 # Changelog
 
+## v1.3.0 — Developer Experience
+
+### Task Dependencies
+- `--after <id>` flag on spawn/sprint — chain tasks so B starts when A completes
+- Configurable timeout via `CLAWFORGE_DEP_TIMEOUT` (default: 1 hour)
+- Auto-aborts if dependency fails/times out/cancelled
+
+### Agent Profiles (`clawforge profile`)
+- Save reusable parameter presets: `clawforge profile create fast --agent claude --model haiku --timeout 5`
+- `profile list|show|create|delete|use`
+- Use with spawn: `clawforge sprint --repo . --task "fix" $(clawforge profile use fast)`
+
+### Replay (`clawforge replay`)
+- Re-run completed/failed tasks with same parameters on a fresh worktree
+- Override model/agent: `clawforge replay 1 --model claude-opus-4`
+- Auto-generates retry branch names (`feature-retry-1`, `-retry-2`, etc.)
+
+### Export (`clawforge export`)
+- Full task history as markdown or JSON report
+- Filter by status, date range
+- Summary stats with cost totals
+
+### Shell Completions (`clawforge completions`)
+- Tab completion for bash, zsh, and fish
+- `clawforge completions zsh` — one command install
+
+### Discord/Slack Webhooks
+- `on-complete` now supports Discord and Slack webhook formats
+- Configure globally: `clawforge config set discord_webhook https://...`
+- Rich Discord embeds with color-coded status
+
+### Doctor Enhancements
+- Lock file health checks
+- Config JSON validation
+- Profile validation
+- Auto-fix for all new checks with `--fix`
+
 ## v1.2.0 — Power Features
 
 ### User Config (`clawforge config`)
