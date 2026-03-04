@@ -83,6 +83,7 @@ Power Features (v1.2):
 
 Web Dashboard (v1.4):
   web         Launch web dashboard (accessible from phone/browser)
+  deps        Show task dependency graph / blocked tasks
 
 Developer Experience (v1.3):
   profile     Manage reusable agent profiles (presets)
@@ -250,6 +251,7 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   export)     exec "${BIN_DIR}/export.sh" "$@" ;;
   completions) exec "${BIN_DIR}/completions.sh" "$@" ;;
   web)        exec "${BIN_DIR}/web.sh" "$@" ;;
+  deps)       exec "${BIN_DIR}/deps.sh" "$@" ;;
   logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
   on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
 

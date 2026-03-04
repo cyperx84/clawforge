@@ -21,6 +21,7 @@ Arguments:
 Flags:
   --quick              Patch mode: auto-branch, auto-merge, skip review, targeted tests
   --branch <name>      Override auto-generated branch name
+  --after <id>         Wait for task <id> to complete before starting
   --agent <name>       Agent to use: claude or codex (default: auto-detect)
   --model <model>      Model override
   --routing <strategy>  Model routing: auto, cheap, or quality (--model overrides)
@@ -47,7 +48,7 @@ EOF
 }
 
 # ── Parse args ────────────────────────────────────────────────────────
-REPO="" TASK="" BRANCH="" AGENT="" MODEL="" QUICK=false AUTO_MERGE=false DRY_RUN=false
+REPO="" TASK="" BRANCH="" AGENT="" MODEL="" QUICK=false AUTO_MERGE=false DRY_RUN=false AFTER=""
 TEMPLATE="" CI_LOOP=false MAX_CI_RETRIES=3 BUDGET="" JSON_OUTPUT=false NOTIFY=false WEBHOOK="" ROUTING=""
 AUTO_CLEAN=false
 TIMEOUT_MIN=""
@@ -57,6 +58,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --quick)          QUICK=true; shift ;;
     --branch)         BRANCH="$2"; shift 2 ;;
+    --after)          AFTER="$2"; shift 2 ;;
     --agent)          AGENT="$2"; shift 2 ;;
     --model)          MODEL="$2"; shift 2 ;;
     --routing)        ROUTING="$2"; shift 2 ;;
@@ -177,6 +179,7 @@ if $DRY_RUN; then
   echo "  Auto-merge: $AUTO_MERGE"
   echo "  Quick:      $QUICK"
   [[ -n "$ROUTING" ]] && echo "  Routing:    $ROUTING"
+  [[ -n "$AFTER" ]] && echo "  After:      $AFTER"
   echo ""
   echo "Would execute:"
   echo "  1. Scope task"
@@ -223,6 +226,7 @@ fi
 SPAWN_ARGS=(--repo "$REPO_ABS" --branch "$BRANCH" --task "$PROMPT")
 [[ -n "${AGENT:-}" ]] && SPAWN_ARGS+=(--agent "$AGENT")
 [[ -n "${SPAWN_MODEL:-}" ]] && SPAWN_ARGS+=(--model "$SPAWN_MODEL")
+[[ -n "${AFTER:-}" ]] && SPAWN_ARGS+=(--after "$AFTER")
 
 TASK_JSON=$("${SCRIPT_DIR}/spawn-agent.sh" "${SPAWN_ARGS[@]}" 2>/dev/null || true)
 

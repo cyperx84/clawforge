@@ -236,3 +236,14 @@ clawforge web --port 8080         # Custom port
 clawforge web --open              # Start + open browser
 clawforge web --build             # Force rebuild binary
 ```
+
+### deps (v1.5)
+```bash
+clawforge deps                # show dependency graph
+clawforge deps --blocked      # only blocked tasks
+clawforge deps --json         # machine-readable graph
+
+# task chaining
+clawforge sprint --after 3 "Run regression tests"
+clawforge swarm --after 7 "Cutover migration"
+```

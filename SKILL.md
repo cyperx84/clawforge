@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v1.4 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v1.5 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -35,6 +35,15 @@ clawforge conflicts                 # overlap/conflict tracking
 clawforge templates                 # built-in/custom workflow templates
 clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
 clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+```
+
+### New in v1.5
+
+```bash
+clawforge deps                     # visualize task dependencies
+clawforge deps --blocked           # only blocked tasks
+clawforge sprint --after 3 "Task" # chain sprint after task #3
+clawforge swarm --after 7 "Task"  # chain swarm after task #7
 ```
 
 ### New in v1.4
