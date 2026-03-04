@@ -14,7 +14,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install jq tmux
+          brew install jq tmux go
 
       - name: Run tests
         run: bash tests/run-all-tests.sh

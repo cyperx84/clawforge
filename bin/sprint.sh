@@ -127,7 +127,15 @@ if $QUICK; then
 fi
 
 # ── Resolve agent + model ────────────────────────────────────────────
-RESOLVED_AGENT=$(detect_agent "${AGENT:-}")
+if ! RESOLVED_AGENT=$(detect_agent "${AGENT:-}" 2>/dev/null); then
+  if $DRY_RUN; then
+    RESOLVED_AGENT="${AGENT:-claude}"
+    log_warn "No local agent binary found; using '$RESOLVED_AGENT' for dry-run preview"
+  else
+    log_error "No coding agent found (need claude or codex)"
+    exit 1
+  fi
+fi
 MODEL_OVERRIDE="$MODEL"  # preserve explicit --model
 if [[ -z "$MODEL" ]]; then
   if [[ "$RESOLVED_AGENT" == "claude" ]]; then

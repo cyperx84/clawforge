@@ -77,7 +77,7 @@ assert_contains "dashboard help shows p key" "preview" "$tui_help"
 # Test 7: version
 echo "Test 7: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-assert_eq "version is 1.4.0" "1.4.0" "$version"
+assert_eq "version is 1.4.1" "1.4.1" "$version"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

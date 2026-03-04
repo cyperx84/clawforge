@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.1 — CI Stability Hotfix
+
+### Fixed
+- Dry-run flows now work when `claude`/`codex` are not installed locally.
+  - `sprint`, `swarm`, and `spawn` now fall back to preview-only agent labels during `--dry-run`.
+  - Real runs still enforce agent availability.
+- CI now installs Go (`brew install go`) before running tests.
+  - Fixes false failures in `test-tui` and keeps macOS runner behavior deterministic.
+
+### Result
+- Previously flaky CI suites (`test-spawn`, `test-modes`, `test-tui`, `test-multi-repo`, `test-routing`) now pass reliably on clean runners.
+
 ## v1.4.0 — Web Dashboard
 
 ### Web Dashboard (`clawforge web`)
