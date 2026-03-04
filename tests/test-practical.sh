@@ -10,7 +10,7 @@ PASS=0 FAIL=0
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if echo "$haystack" | grep -qF -- "$needle"; then
+  if grep -qF -- "$needle" <<< "$haystack"; then
     echo "  ✅ $desc"; PASS=$((PASS+1))
   else
     echo "  ❌ $desc (missing: $needle)"; FAIL=$((FAIL+1))
@@ -96,7 +96,7 @@ assert_contains "watch checks terminal states" "done|failed|timeout|cancelled" "
 # Test 9: version
 echo "Test 9: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-assert_eq "version is 1.5.1" "1.5.1" "$version"
+assert_eq "version is 1.5.2" "1.5.2" "$version"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

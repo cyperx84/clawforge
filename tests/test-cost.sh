@@ -52,7 +52,7 @@ assert_contains() {
   local desc="$1" expected="$2"; shift 2
   local output
   output=$("$@" 2>&1 || true)
-  if echo "$output" | grep -q "$expected"; then
+  if grep -q "$expected" <<< "$output"; then
     echo "  ✅ $desc"
     ((PASS++)) || true
   else
