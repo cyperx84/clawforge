@@ -134,10 +134,10 @@ assert_contains "help shows Developer Experience" "Developer Experience" "$cli_h
 # Test 11: version
 echo "Test 11: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-if [[ "$version" == "1.5.0" ]]; then
-  echo "  ✅ version is 1.5.0"; PASS=$((PASS+1))
+if [[ "$version" == "1.5.1" ]]; then
+  echo "  ✅ version is 1.5.1"; PASS=$((PASS+1))
 else
-  echo "  ❌ version is $version, expected 1.5.0"; FAIL=$((FAIL+1))
+  echo "  ❌ version is $version, expected 1.5.1"; FAIL=$((FAIL+1))
 fi
 
 echo ""

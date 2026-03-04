@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.1 — CI Test Flake Fix
+
+### Fixed
+- `test-dashboard` flaky failure on GitHub Actions due `set -o pipefail` + `echo | grep -q` broken-pipe behavior.
+- Updated assertion helper to use here-string (`grep <<< "$output"`) for deterministic behavior.
+
+### Result
+- Stabilizes main-branch CI while preserving full dashboard test coverage.
+
 ## v1.5.0 — Dependency Graph + Chaining
 
 ### New
