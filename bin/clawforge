@@ -81,6 +81,9 @@ Power Features (v1.2):
   summary     AI-generated summary of what an agent did
   parse-cost  Parse real cost/token data from agent output
 
+Web Dashboard (v1.4):
+  web         Launch web dashboard (accessible from phone/browser)
+
 Developer Experience (v1.3):
   profile     Manage reusable agent profiles (presets)
   replay      Re-run a completed task with same parameters
@@ -246,6 +249,7 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   replay)     exec "${BIN_DIR}/replay.sh" "$@" ;;
   export)     exec "${BIN_DIR}/export.sh" "$@" ;;
   completions) exec "${BIN_DIR}/completions.sh" "$@" ;;
+  web)        exec "${BIN_DIR}/web.sh" "$@" ;;
   logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
   on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
 
