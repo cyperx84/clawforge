@@ -34,7 +34,7 @@ assert_contains() {
   local desc="$1" expected="$2"; shift 2
   local output
   output=$("$@" 2>&1 || true)
-  if echo "$output" | grep -q "$expected"; then
+  if grep -q "$expected" <<< "$output"; then
     echo "  ✅ $desc"
     ((PASS++)) || true
   else
@@ -113,7 +113,7 @@ assert_ok "check-agents runs on empty registry" "$CHECK" --dry-run
 echo "Test 6: check with task"
 output=$("$CHECK" --dry-run 2>&1 || true)
 # Should find our task
-if echo "$output" | grep -q "ci-test-1\|Agent Status"; then
+if grep -q "ci-test-1\|Agent Status" <<< "$output"; then
   echo "  ✅ check-agents finds registered task"
   PASS=$((PASS+1))
 else

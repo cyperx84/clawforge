@@ -74,7 +74,7 @@ assert_eq "dead session detected as failed" "failed" "$detected_status"
 # Test 4: --help flag
 echo "Test 4: --help flag"
 help_output=$("$BIN_DIR/check-agents.sh" --help 2>&1 || true)
-if echo "$help_output" | grep -q "Usage:"; then
+if grep -q "Usage:" <<< "$help_output"; then
   assert_eq "help shows usage" "true" "true"
 else
   assert_eq "help shows usage" "true" "false"

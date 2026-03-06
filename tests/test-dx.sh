@@ -10,7 +10,7 @@ PASS=0 FAIL=0
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if echo "$haystack" | grep -qF -- "$needle"; then
+  if grep -qF -- "$needle" <<< "$haystack"; then
     echo "  ✅ $desc"; PASS=$((PASS+1))
   else
     echo "  ❌ $desc (missing: $needle)"; FAIL=$((FAIL+1))
@@ -134,10 +134,10 @@ assert_contains "help shows Developer Experience" "Developer Experience" "$cli_h
 # Test 11: version
 echo "Test 11: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-if [[ "$version" == "1.5.1" ]]; then
-  echo "  ✅ version is 1.5.1"; PASS=$((PASS+1))
+if [[ "$version" == "1.5.2" ]]; then
+  echo "  ✅ version is 1.5.2"; PASS=$((PASS+1))
 else
-  echo "  ❌ version is $version, expected 1.5.1"; FAIL=$((FAIL+1))
+  echo "  ❌ version is $version, expected 1.5.2"; FAIL=$((FAIL+1))
 fi
 
 echo ""

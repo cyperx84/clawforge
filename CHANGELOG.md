@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.2 — Test Harness Stability
+
+### Fixed
+- Replaced fragile `echo ... | grep -q` checks in test scripts with here-string checks (`grep -q <<< ...`).
+- Avoids intermittent broken-pipe behavior under `set -o pipefail` on GitHub Actions.
+
+### Result
+- Stabilizes observability/web/dashboard-related suites on clean macOS runners.
+
 ## v1.5.1 — CI Test Flake Fix
 
 ### Fixed

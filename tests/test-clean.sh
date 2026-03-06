@@ -33,7 +33,7 @@ TMPDIR=$(mktemp -d)
 # Test 1: --help
 echo "Test 1: --help flag"
 help_output=$("$BIN_DIR/clean.sh" --help 2>&1 || true)
-if echo "$help_output" | grep -q "Usage:"; then
+if grep -q "Usage:" <<< "$help_output"; then
   assert_eq "help shows usage" "true" "true"
 else
   assert_eq "help shows usage" "true" "false"

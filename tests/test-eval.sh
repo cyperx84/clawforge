@@ -17,7 +17,7 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if echo "$haystack" | grep -qF -- "$needle"; then
+  if grep -qF -- "$needle" <<< "$haystack"; then
     echo "  ✅ $desc"; PASS=$((PASS+1))
   else
     echo "  ❌ $desc (missing: $needle)"; FAIL=$((FAIL+1))

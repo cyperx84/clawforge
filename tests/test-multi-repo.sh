@@ -56,7 +56,7 @@ assert_contains() {
   local desc="$1" expected="$2"; shift 2
   local output
   output=$("$@" 2>&1 || true)
-  if echo "$output" | grep -q "$expected"; then
+  if grep -q "$expected" <<< "$output"; then
     echo "  ✅ $desc"
     PASS=$((PASS+1))
   else
@@ -173,7 +173,7 @@ echo '{"tasks":[]}' > "$REGISTRY_FILE"
 output=$("$BIN_DIR/swarm.sh" "$TMPDIR/repo-api" "Migrate tests" --dry-run 2>&1 || true)
 assert_contains "normal swarm dry-run works" "Decomposition" echo "$output"
 # Should NOT have Multi-Repo in output
-if echo "$output" | grep -q "Multi-Repo"; then
+if grep -q "Multi-Repo" <<< "$output"; then
   echo "  ❌ normal swarm should not show Multi-Repo"
   FAIL=$((FAIL+1))
 else
