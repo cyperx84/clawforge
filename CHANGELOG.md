@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.3 — TUI Fixes
+
+### Fixed
+- **Init race**: agents now load instantly on startup (was showing "No agents found" for 2s due to value-receiver bug in Bubble Tea Init)
+- **False failure**: running tasks no longer marked as `failed` when their tmux session hasn't spawned yet or agent runs headlessly
+- **Unicode truncation**: status emoji and description text with multi-byte characters now truncate/pad correctly (rune-aware)
+
 ## v1.5.2 — Test Harness Stability
 
 ### Fixed
