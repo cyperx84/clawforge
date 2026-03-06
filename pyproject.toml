@@ -1,6 +1,6 @@
 [project]
 name = "clawforge-cli"
-version = "1.5.3"
+version = "1.5.4"
 description = "Multi-mode coding workflow CLI for orchestrating AI coding agents"
 readme = "README.md"
 license = "MIT"
