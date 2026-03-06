@@ -75,6 +75,20 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 			if session == "" {
 				session = "clawforge-" + agent.ID
 			}
+			// Check if tmux session exists before trying to attach
+			check := exec.Command("tmux", "has-session", "-t", session)
+			if err := check.Run(); err != nil {
+				// Session doesn't exist — show logs instead
+				logCmd := exec.Command("tmux", "show-buffer", "-b", session)
+				if logOut, logErr := logCmd.Output(); logErr == nil && len(logOut) > 0 {
+					m.showPreview = true
+					filtered := m.filteredAgents()
+					if m.selected < len(filtered) {
+						filtered[m.selected].Preview = string(logOut)
+					}
+				}
+				return m, nil
+			}
 			cmd := exec.Command("tmux", "attach-session", "-t", session)
 			return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
 				return attachDoneMsg{err}

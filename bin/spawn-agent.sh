@@ -220,11 +220,12 @@ fi
 # Kill existing session if present (idempotent)
 tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
 
-# Build agent command
+# Build agent command — interactive mode so tmux attach works
+ESCAPED_PROMPT=$(echo "$FULL_PROMPT" | sed 's/"/\\"/g')
 if [[ "$RESOLVED_AGENT" == "claude" ]]; then
-  AGENT_CMD="claude --model ${MODEL} --dangerously-skip-permissions -p \"$(echo "$FULL_PROMPT" | sed 's/"/\\"/g')\""
+  AGENT_CMD="claude --model ${MODEL} --dangerously-skip-permissions --verbose -p \"${ESCAPED_PROMPT}\"; echo; echo \"[ClawForge] Agent finished. Press Enter to close.\"; read"
 elif [[ "$RESOLVED_AGENT" == "codex" ]]; then
-  AGENT_CMD="codex --model ${MODEL} --dangerously-bypass-approvals-and-sandbox \"$(echo "$FULL_PROMPT" | sed 's/"/\\"/g')\""
+  AGENT_CMD="codex --model ${MODEL} --dangerously-bypass-approvals-and-sandbox \"${ESCAPED_PROMPT}\"; echo; echo \"[ClawForge] Agent finished. Press Enter to close.\"; read"
 fi
 
 # Create tmux session and launch

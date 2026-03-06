@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.4 — TUI Attach + Agent Session Persistence
+
+### Fixed
+- **Agent sessions stay alive after completion**: `spawn-agent.sh` now keeps the tmux session open after the agent finishes, so you can attach and review output via Enter key
+- **Enter key handles missing sessions**: TUI gracefully handles dead/missing tmux sessions instead of silently failing
+- **`--verbose` flag for claude**: Agent output is more visible when attached
+
+### Changed
+- Spawn uses `claude --verbose -p` (still headless, but with visible progress) + session persistence (`read` prompt on completion)
+
 ## v1.5.3 — TUI Fixes
 
 ### Fixed
