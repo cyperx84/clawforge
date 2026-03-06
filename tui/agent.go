@@ -128,13 +128,12 @@ func LoadAgents() []Agent {
 			Conflicts:   conflicts[t.ID],
 		}
 
-		// Enrich status from tmux if task is "running".
+		// Enrich preview from tmux if task is "running".
 		if a.Status == "running" && a.TmuxSession != "" {
-			if _, ok := tmuxSessions[a.TmuxSession]; !ok {
-				a.Status = "failed"
-			} else {
+			if _, ok := tmuxSessions[a.TmuxSession]; ok {
 				a.Preview = captureTmuxPreview(a.TmuxSession, previewLines)
 			}
+			// Don't override status — tmux may not be up yet or agent runs headlessly.
 		}
 
 		if a.Cost == "" {

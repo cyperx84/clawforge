@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"unicode/utf8"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -199,21 +200,23 @@ func renderStatusBar(m Model) string {
 	return statusBarStyle.Render(bar)
 }
 
-// truncate shortens a string to maxLen, adding "…" if needed.
+// truncate shortens a string to maxLen runes, adding "…" if needed.
 func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	if utf8.RuneCountInString(s) <= maxLen {
 		return s
 	}
 	if maxLen <= 1 {
 		return "…"
 	}
-	return s[:maxLen-1] + "…"
+	runes := []rune(s)
+	return string(runes[:maxLen-1]) + "…"
 }
 
-// padRight pads a string with spaces to the given width.
+// padRight pads a string with spaces to the given width (rune-aware).
 func padRight(s string, width int) string {
-	if len(s) >= width {
+	n := utf8.RuneCountInString(s)
+	if n >= width {
 		return s
 	}
-	return s + strings.Repeat(" ", width-len(s))
+	return s + strings.Repeat(" ", width-n)
 }

@@ -9,6 +9,11 @@ import (
 // RefreshTickMsg triggers periodic data reload.
 type RefreshTickMsg time.Time
 
+// InitialLoadMsg carries the first agent load so Init can return it as a Cmd.
+type InitialLoadMsg struct {
+	Agents []Agent
+}
+
 const refreshInterval = 2 * time.Second
 
 // Model is the top-level Bubble Tea model for the ClawForge TUI dashboard.
@@ -68,9 +73,11 @@ func (m Model) Init() tea.Cmd {
 	if m.animating {
 		return animationTick()
 	}
-	// No animation: load agents immediately and start refresh cycle.
-	m.agents = LoadAgents()
-	return refreshTick()
+	// No animation: load agents via command (Init has value receiver, can't mutate).
+	return tea.Batch(
+		func() tea.Msg { return InitialLoadMsg{Agents: LoadAgents()} },
+		refreshTick(),
+	)
 }
 
 // refreshTick returns a command that sends a RefreshTickMsg after refreshInterval.
@@ -98,6 +105,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, animationTick()
 		}
+		return m, nil
+
+	case InitialLoadMsg:
+		m.agents = msg.Agents
 		return m, nil
 
 	case AnimationDoneMsg:
