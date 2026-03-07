@@ -25,6 +25,7 @@ type Agent struct {
 	Conflicts   int
 	Description string
 	Worktree    string
+	LogPath     string
 	TmuxSession string
 }
 
@@ -42,6 +43,7 @@ type registryTask struct {
 	Model       string `json:"model"`
 	Repo        string `json:"repo"`
 	CIStatus    string `json:"ci_status"`
+	LogPath     string `json:"log_path"`
 }
 
 type registryFile struct {
@@ -122,6 +124,7 @@ func LoadAgents() []Agent {
 			Description: t.Description,
 			Task:        t.Description,
 			Worktree:    t.Worktree,
+			LogPath:     t.LogPath,
 			TmuxSession: t.TmuxSession,
 			CI:          ciIndicator(t.CIStatus),
 			Cost:        costs[t.ID],

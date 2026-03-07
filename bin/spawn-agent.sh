@@ -114,6 +114,8 @@ else
 fi
 
 TMUX_SESSION="agent-${SAFE_BRANCH}"
+LOGFILE="${CLAWFORGE_DIR}/registry/logs/${SAFE_BRANCH}.log"
+mkdir -p "$(dirname "$LOGFILE")"
 MAX_RETRIES=$(config_get max_retries 3)
 
 log_info "Spawning agent: $RESOLVED_AGENT ($MODEL)"
@@ -183,6 +185,7 @@ TASK_JSON=$(jq -n \
   --arg desc "$TASK" \
   --arg repo "$REPO_ABS" \
   --arg wt "$WORKTREE_DIR" \
+  --arg log "$LOGFILE" \
   --arg branch "$BRANCH" \
   --argjson started "$NOW" \
   --argjson maxRetries "$MAX_RETRIES" \
@@ -194,6 +197,7 @@ TASK_JSON=$(jq -n \
     description: $desc,
     repo: $repo,
     worktree: $wt,
+    log_path: $log,
     branch: $branch,
     startedAt: $started,
     status: "spawned",
@@ -223,9 +227,9 @@ tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
 # Build agent command — interactive mode so tmux attach works
 ESCAPED_PROMPT=$(echo "$FULL_PROMPT" | sed 's/"/\\"/g')
 if [[ "$RESOLVED_AGENT" == "claude" ]]; then
-  AGENT_CMD="claude --model ${MODEL} --dangerously-skip-permissions --verbose -p \"${ESCAPED_PROMPT}\"; echo; echo \"[ClawForge] Agent finished. Press Enter to close.\"; read"
+  AGENT_CMD="claude --model ${MODEL} --dangerously-skip-permissions --verbose -p \"${ESCAPED_PROMPT}\" 2>&1 | tee \"${LOGFILE}\"; echo; echo \"[ClawForge] Agent finished. Press Enter to close.\"; read"
 elif [[ "$RESOLVED_AGENT" == "codex" ]]; then
-  AGENT_CMD="codex --model ${MODEL} --dangerously-bypass-approvals-and-sandbox \"${ESCAPED_PROMPT}\"; echo; echo \"[ClawForge] Agent finished. Press Enter to close.\"; read"
+  AGENT_CMD="codex --model ${MODEL} --dangerously-bypass-approvals-and-sandbox \"${ESCAPED_PROMPT}\" 2>&1 | tee \"${LOGFILE}\"; echo; echo \"[ClawForge] Agent finished. Press Enter to close.\"; read"
 fi
 
 # Create tmux session and launch
