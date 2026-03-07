@@ -28,7 +28,8 @@ type Model struct {
 	width       int
 	height      int
 	steerMode   bool
-	showPreview bool
+	showPreview     bool
+	previewContent  string // static content to show in preview (log, diff)
 	steerInput  string
 	confirmStop bool
 	frame       int

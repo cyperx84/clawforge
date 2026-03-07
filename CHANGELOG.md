@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.5 — TUI Observability: Logs + Diff Keys
+
+### Added
+- `l` key in TUI dashboard: show last 50 lines of agent log in preview pane (reads log file; falls back to tmux capture for live sessions)
+- `d` key in TUI dashboard: show `git diff --stat HEAD` for selected agent's worktree
+- `Enter` now falls back to showing log file in preview when session is gone (instead of silent no-op)
+- Agent log files auto-captured to `~/.clawforge/registry/logs/<branch>.log` via `tee` on spawn
+- `log_path` stored in registry and surfaced to TUI
+- `Esc` closes preview/log panel
+- Navigation clears stale static preview content
+
+### Fixed
+- `Enter` on finished/dead sessions silently did nothing — now shows log output
+
 ## v1.5.4 — TUI Attach + Agent Session Persistence
 
 ### Fixed

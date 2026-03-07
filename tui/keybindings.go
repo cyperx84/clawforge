@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -48,44 +49,51 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 	case "j", "down":
 		if count > 0 && m.selected < count-1 {
 			m.selected++
+			m.previewContent = "" // clear static preview on navigation
 		}
 		return m, nil
 
 	case "k", "up":
 		if m.selected > 0 {
 			m.selected--
+			m.previewContent = "" // clear static preview on navigation
 		}
 		return m, nil
 
 	case "g":
 		m.selected = 0
+		m.previewContent = ""
 		return m, nil
 
 	case "G":
 		if count > 0 {
 			m.selected = count - 1
+			m.previewContent = ""
 		}
 		return m, nil
 
 	case "enter":
 		// Attach to selected agent's tmux session.
+		// If no live session, fall back to showing log in preview.
 		if count > 0 {
 			agent := agents[m.selected]
 			session := agent.TmuxSession
 			if session == "" {
 				session = "clawforge-" + agent.ID
 			}
-			// Check if tmux session exists before trying to attach
+			// Check if tmux session exists before trying to attach.
 			check := exec.Command("tmux", "has-session", "-t", session)
 			if err := check.Run(); err != nil {
-				// Session doesn't exist — show logs instead
-				logCmd := exec.Command("tmux", "show-buffer", "-b", session)
-				if logOut, logErr := logCmd.Output(); logErr == nil && len(logOut) > 0 {
-					m.showPreview = true
-					filtered := m.filteredAgents()
-					if m.selected < len(filtered) {
-						filtered[m.selected].Preview = string(logOut)
+				// No live session — show log file in preview instead.
+				m.showPreview = true
+				if agent.LogPath != "" {
+					if data, rerr := os.ReadFile(agent.LogPath); rerr == nil && len(data) > 0 {
+						m.previewContent = "(log)\n" + tailLines(string(data), 40)
+					} else {
+						m.previewContent = "(no log captured — session has ended)"
 					}
+				} else {
+					m.previewContent = "(no live session and no log path recorded)"
 				}
 				return m, nil
 			}
@@ -146,6 +154,7 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 	case "r":
 		// Force refresh.
 		m.agents = LoadAgents()
+		m.previewContent = ""
 		// Clamp selection.
 		filtered := m.filteredAgents()
 		if m.selected >= len(filtered) {
@@ -153,8 +162,56 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "l":
+		// Show last 50 lines of agent log in preview pane.
+		if count > 0 {
+			agent := agents[m.selected]
+			m.showPreview = true
+			if agent.LogPath != "" {
+				if data, err := os.ReadFile(agent.LogPath); err == nil && len(data) > 0 {
+					m.previewContent = "(log) " + agent.ID + "\n" + tailLines(string(data), 50)
+				} else {
+					m.previewContent = "(no log yet for " + agent.ID + ")"
+				}
+			} else if agent.TmuxSession != "" {
+				// Fallback: capture from live tmux pane.
+				out, err := exec.Command("tmux", "capture-pane", "-t", agent.TmuxSession, "-p", "-S", "-50").Output()
+				if err == nil && len(out) > 0 {
+					m.previewContent = "(tmux) " + agent.ID + "\n" + string(out)
+				} else {
+					m.previewContent = "(no output captured for " + agent.ID + ")"
+				}
+			} else {
+				m.previewContent = "(no log path or tmux session for " + agent.ID + ")"
+			}
+		}
+		return m, nil
+
+	case "d":
+		// Show git diff --stat for selected agent's worktree.
+		if count > 0 {
+			agent := agents[m.selected]
+			m.showPreview = true
+			if agent.Worktree != "" {
+				out, err := exec.Command("git", "-C", agent.Worktree, "diff", "--stat", "HEAD").Output()
+				if err == nil && len(out) > 0 {
+					m.previewContent = "(diff) " + agent.ID + "\n" + string(out)
+				} else {
+					out2, _ := exec.Command("git", "-C", agent.Worktree, "status", "--short").Output()
+					m.previewContent = "(diff) " + agent.ID + " — no diff yet\n" + string(out2)
+				}
+			} else {
+				m.previewContent = "(no worktree recorded for " + agent.ID + ")"
+			}
+		}
+		return m, nil
+
 	case "p":
+		// Toggle live preview pane (clears any static log/diff content).
 		m.showPreview = !m.showPreview
+		if !m.showPreview {
+			m.previewContent = ""
+		}
 		return m, nil
 
 	case "n":
@@ -178,6 +235,10 @@ func handleKeyPress(m Model, msg tea.KeyPressMsg) (Model, tea.Cmd) {
 		// Close any overlay.
 		if m.showHelp {
 			m.showHelp = false
+		}
+		if m.previewContent != "" {
+			m.previewContent = ""
+			m.showPreview = false
 		}
 		return m, nil
 	}
@@ -214,18 +275,20 @@ func renderHelpOverlay(width int) string {
 		desc string
 	}{
 		{"j/k", "Navigate agent list"},
-		{"Enter", "Attach to selected agent's tmux session"},
+		{"Enter", "Attach to tmux session (or show log if session gone)"},
+		{"l", "Show agent log in preview pane"},
+		{"d", "Show git diff in preview pane"},
 		{"s", "Steer selected agent (prompts for message)"},
 		{"x", "Stop selected agent"},
 		{"/", "Filter agents"},
 		{"1/2/3", "Views: all / running / finished"},
 		{"Tab", "Cycle views"},
 		{"n", "Nudge selected running agent"},
-		{"p", "Toggle output preview pane"},
+		{"p", "Toggle live output preview pane"},
 		{"r", "Force refresh"},
 		{"g/G", "Go to top/bottom"},
 		{"?", "Toggle help overlay"},
-		{"Esc", "Close modal/overlay"},
+		{"Esc", "Close modal/overlay/preview"},
 		{"q", "Quit dashboard"},
 	}
 
@@ -240,4 +303,13 @@ func renderHelpOverlay(width int) string {
 
 	content := strings.Join(lines, "\n")
 	return helpOverlayStyle.Render(content)
+}
+
+// tailLines returns the last n lines of s.
+func tailLines(s string, n int) string {
+	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
+	if len(lines) <= n {
+		return strings.Join(lines, "\n")
+	}
+	return strings.Join(lines[len(lines)-n:], "\n")
 }

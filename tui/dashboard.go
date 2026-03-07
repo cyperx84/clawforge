@@ -114,11 +114,15 @@ func renderDashboard(m Model) string {
 				fmt.Sprintf("── Preview: %s ──", selAgent.ID))
 			b.WriteString(previewHeader)
 			b.WriteString("\n")
-			if selAgent.Preview != "" {
-				b.WriteString(lipgloss.NewStyle().Faint(true).Render(selAgent.Preview))
-			} else {
-				b.WriteString(lipgloss.NewStyle().Faint(true).Render("(no output / not running)"))
+			// Static content (from l/d keys) takes priority over live tmux preview.
+			content := m.previewContent
+			if content == "" {
+				content = selAgent.Preview
 			}
+			if content == "" {
+				content = "(no output / not running)"
+			}
+			b.WriteString(lipgloss.NewStyle().Faint(true).Render(content))
 			b.WriteString("\n")
 		}
 	}
