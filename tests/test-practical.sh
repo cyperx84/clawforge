@@ -96,7 +96,7 @@ assert_contains "watch checks terminal states" "done|failed|timeout|cancelled" "
 # Test 9: version
 echo "Test 9: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-assert_eq "version is 1.6.2" "1.6.2" "$version"
+assert_eq "version is 1.6.3" "1.6.3" "$version"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
