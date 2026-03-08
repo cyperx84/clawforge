@@ -107,7 +107,7 @@ assert_contains "help shows Web Dashboard" "Web Dashboard" "$cli_help"
 # Test 7: version
 echo "Test 7: version"
 version=$(cat "${SCRIPT_DIR}/../VERSION")
-assert_eq "version is 1.6.2" "1.6.2" "$version"
+assert_eq "version is 1.6.3" "1.6.3" "$version"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

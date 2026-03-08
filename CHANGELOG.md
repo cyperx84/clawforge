@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.6.3 — npm Binary Download on Install
+
+### Fixed
+- `npm install -g @cyperx/clawforge` now downloads the correct pre-built `clawforge-dashboard` and `clawforge-web` binaries for your platform (darwin-arm64, darwin-amd64, linux-amd64, linux-arm64)
+- Added `bin/install-binaries.js` postinstall script
+- Exposed `clawforge-dashboard` and `clawforge-web` as named bin entries in package.json
+- Updated GitHub Actions `publish-npm.yml` to cross-compile all 4 platform binaries and attach them to the release before publishing
+
+### Behaviour
+- Fails gracefully with a clear warning if download fails (does not break install)
+- Shows build-from-source instructions as fallback
+
 ## v1.6.2 — Emoji Forge Animation
 
 ### Changed
