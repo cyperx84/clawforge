@@ -76,15 +76,17 @@ else
 fi
 
 # ── Resolve agent ──────────────────────────────────────────────────────
-RESOLVED_AGENT=$(detect_agent "${AGENT:-}")
-[[ -z "$RESOLVED_AGENT" ]] && { log_error "No agent (claude/codex) found in PATH"; exit 1; }
+RESOLVED_AGENT=$(detect_agent "${AGENT:-}" 2>/dev/null || echo "")
+if [[ -z "$RESOLVED_AGENT" ]]; then
+  RESOLVED_AGENT="${AGENT:-claude}"  # Use placeholder for dry-run/help; real run validates below
+fi
 
 # ── Resolve model ──────────────────────────────────────────────────────
 if [[ -z "$MODEL" ]]; then
-  if [[ "$RESOLVED_AGENT" == "claude" ]]; then
-    MODEL=$(config_get default_model_claude "claude-sonnet-4-5")
-  else
+  if [[ "$RESOLVED_AGENT" == "codex" ]]; then
     MODEL=$(config_get default_model_codex "gpt-5.3-codex")
+  else
+    MODEL=$(config_get default_model_claude "claude-sonnet-4-5")
   fi
 fi
 
@@ -108,6 +110,11 @@ if $DRY_RUN; then
   echo "──────────────────────────────────────────"
   exit 0
 fi
+
+# ── Validate agent is actually installed for real runs ────────────────
+REAL_AGENT=$(detect_agent "${AGENT:-}" 2>/dev/null || echo "")
+[[ -z "$REAL_AGENT" ]] && { log_error "No agent (claude/codex) found in PATH. Install Claude Code or Codex."; exit 1; }
+RESOLVED_AGENT="$REAL_AGENT"
 
 # ── Register task ──────────────────────────────────────────────────────
 SHORT_ID=""
