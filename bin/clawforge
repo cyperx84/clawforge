@@ -43,6 +43,7 @@ Multi-mode coding workflow CLI — from quick patches to parallel agent orchestr
 Usage: clawforge <command> [options]
 
 Workflow Modes:
+  quick-run   Direct agent execution in cwd (no branch/worktree overhead)
   sprint      Single agent, full dev cycle (the workhorse)
   review      Quality gate on an existing PR (analysis only)
   swarm       Parallel multi-agent orchestration
@@ -260,6 +261,7 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   spawn)      exec "${BIN_DIR}/spawn-agent.sh" "$@" ;;
   notify)     exec "${BIN_DIR}/notify.sh" "$@" ;;
   merge)      exec "${BIN_DIR}/merge-helper.sh" "$@" ;;
+  quick-run)  exec "${BIN_DIR}/quick-run.sh" "$@" ;;
   run)        run_combined "$@" ;;
 
   # Meta

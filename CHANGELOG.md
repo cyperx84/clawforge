@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.6.0 — quick-run: Zero-Overhead Direct Execution
+
+### Added
+- New `clawforge quick-run "<task>"` command
+  - Runs agent directly in current directory (or `--dir <path>`)
+  - No worktree, no branch, no tmux — streams output to terminal
+  - Flags: `--agent`, `--model`, `--save`, `--budget`, `--no-track`, `--dir`, `--dry-run`
+  - Output teed to log file (`~/.clawforge/registry/logs/`) and registered in task history
+  - Appears in `clawforge status` unless `--no-track` used
+- 34 test suites (new: `test-quick-run`)
+
+### Use case
+For quick questions, codebase exploration, or small fixes that don't need a branch/PR workflow.
+Use `clawforge sprint` when you need a branch, worktree, CI loop, and PR.
+
 ## v1.5.5 — TUI Observability: Logs + Diff Keys
 
 ### Added
