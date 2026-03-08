@@ -68,7 +68,7 @@ assert_fail "nonexistent dir fails" "$QR" "task" --dir /nonexistent/path
 echo "Test 5: dry-run"
 TMPDIR_TEST=$(mktemp -d)
 assert_contains "dry-run shows task"      "task"        "$QR" "Explain the code" --dir "$TMPDIR_TEST" --dry-run
-assert_contains "dry-run shows agent"     "agent\|claude\|codex" "$QR" "Explain the code" --dir "$TMPDIR_TEST" --dry-run
+assert_contains "dry-run shows agent"     "agent:" "$QR" "Explain the code" --dir "$TMPDIR_TEST" --dry-run
 assert_contains "dry-run shows dir"       "$TMPDIR_TEST" "$QR" "Explain the code" --dir "$TMPDIR_TEST" --dry-run
 assert_contains "dry-run shows model"     "model"       "$QR" "Explain the code" --dir "$TMPDIR_TEST" --dry-run
 assert_contains "dry-run no-track shows no" "no"        "$QR" "Explain the code" --dir "$TMPDIR_TEST" --dry-run --no-track

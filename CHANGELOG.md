@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.1 — quick-run CI Fix
+
+### Fixed
+- `quick-run` dry-run now works even when no agent (claude/codex) is installed
+- Agent placeholder used for dry-run/help; real runs still validate agent is present
+- Fixes test-quick-run failures on CI environments without Claude/Codex
+
 ## v1.6.0 — quick-run: Zero-Overhead Direct Execution
 
 ### Added
