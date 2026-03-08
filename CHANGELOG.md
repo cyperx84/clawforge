@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.6.2 — Emoji Forge Animation
+
+### Changed
+- TUI startup animation replaced with 10-frame emoji sequence
+  - Cold forge (⬛) → embers (🟠) → fire (🔥) → hammer up (🔨) → STRIKE (💥⚡✨)
+  - Sparks flying → quench (💧🌊) → agents emerge (🤖) → fleet online (✅)
+- Frame timing tuned to 140ms for smooth progression (~1.4s total)
+
 ## v1.6.1 — quick-run CI Fix
 
 ### Fixed

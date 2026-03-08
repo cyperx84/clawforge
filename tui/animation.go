@@ -13,160 +13,160 @@ type AnimationTickMsg time.Time
 // AnimationDoneMsg signals that the startup animation has completed.
 type AnimationDoneMsg struct{}
 
-const frameDuration = 120 * time.Millisecond
+const frameDuration = 140 * time.Millisecond
 
-// forgeFrames contains the ASCII art frames for the forge startup animation.
-// 10 frames of a hammering/sparks effect at ~120ms each = ~1.2s total.
+// forgeFrames contains the emoji animation frames for the forge startup sequence.
+// 10 frames @ 140ms = ~1.4s total.
+// Each frame is centered by lipgloss — emoji are kept spaced to avoid double-width
+// alignment drift across different terminal emulators.
 var forgeFrames = [...]string{
-	// Frame 0: Forge cold
+
+	// Frame 0 — Cold forge: nothing active yet
 	`
-        _______________
-       /               \
-      /   C L A W       \
-     /    F O R G E      \
-    /                     \
-   /_______________________\
-          |       |
-          |       |
-          |  ___  |
-          | |   | |
-   _______|_|___|_|________
-  |________________________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        ⬛  ⬛  ⬛  ⬛  ⬛
+
+        ⬛             ⬛
+
+        ⬛  ⬛  ⬛  ⬛  ⬛
+
+
+      · · · initializing · · ·
 `,
-	// Frame 1: Embers glow
+
+	// Frame 1 — First ember: a single spark at the base
 	`
-        _______________
-       /               \
-      /   C L A W       \
-     /    F O R G E      \
-    /         .           \
-   /_______________________\
-          |       |
-          |   *   |
-          |  ___  |
-          | |   | |
-   _______|_|___|_|________
-  |_______.....____________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        ⬛  ⬛  ⬛  ⬛  ⬛
+
+        ⬛      🟠     ⬛
+
+        ⬛  ⬛  ⬛  ⬛  ⬛
+
+
+      · · · heating forge · · ·
 `,
-	// Frame 2: Fire rising
+
+	// Frame 2 — Embers glow: fire building
 	`
-        _______________
-       /               \
-      /   C L A W       \
-     /    F O R G E      \
-    /        . .          \
-   /_______________________\
-          |  * *  |
-          |  /|\  |
-          |  ___  |
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        ⬛  ⬛  ⬛  ⬛  ⬛
+
+        ⬛   🔥  🟠  🔥  ⬛
+
+        ⬛  ⬛  ⬛  ⬛  ⬛
+
+
+      · · · fire rising · · ·
 `,
-	// Frame 3: Hammer up
+
+	// Frame 3 — Full fire: forge is hot
 	`
-        _______________
-       /               \    _____
-      /   C L A W       \  |     |
-     /    F O R G E      \ | ))) |
-    /       * . *         \|_____|
-   /_______________________\  |
-          | *** * |           |
-          |  /|\  |          /
-          |  ___  |         /
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        🟥  🟥  🟥  🟥  🟥
+
+        🟥   🔥  🔥  🔥  🟥
+
+        🟥  🟥  🟥  🟥  🟥
+
+
+      · · · forge is hot · · ·
 `,
-	// Frame 4: Hammer strike!
+
+	// Frame 4 — Hammer raised: agent ready to strike
 	`
-        _______________
-       /               \
-      /   C L A W       \
-     /    F O R G E      \  _____
-    /     * * . * *       \ |     |
-   /________________________| ))) |
-          | ***** |         |_____|
-          |  /|\  |
-          |  ___  |
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+            🔨
+
+        🟥  🟥  🟥  🟥  🟥
+
+        🟥   🔥  🔥  🔥  🟥
+
+        🟥  🟥  🟥  🟥  🟥
+
+
+      · · · agents loading · · ·
 `,
-	// Frame 5: SPARKS!
+
+	// Frame 5 — STRIKE: hammer hits the forge
 	`
-        _______________
-       /    *      *    \
-      /   C L A W    *   \
-     /    F O R G E   *   \  _____
-    /   *  * * . * *  *    \ |     |
-   /________________________\| ))) |
-       *  | ***** |  *      |_____|
-      *   |  /|\  |   *
-          |  ___  |
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        ⚡  ⚡  💥  ⚡  ⚡
+
+        ⚡   🔥  🔨  🔥  ⚡
+
+        ⚡  ⚡  ✨  ⚡  ⚡
+
+
+      · · · FORGING AGENTS · · ·
 `,
-	// Frame 6: Sparks fade, hammer lifts
+
+	// Frame 6 — Sparks fly: maximum energy
 	`
-        _______________
-       /       *        \
-      /   C L A W        \
-     /    F O R G E       \  _____
-    /      * . . *         \ |     |
-   /_______________________\ | ))) |
-          | * * * |          |_____|
-          |  /|\  |            |
-          |  ___  |           /
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+   ✨      ⚡  💥  ⚡      ✨
+
+        ⚡   🔥  🔥  🔥  ⚡
+
+   ✨      ⚡  ✨  ⚡      ✨
+
+
+      · · · SPARKS FLYING · · ·
 `,
-	// Frame 7: Second strike!
+
+	// Frame 7 — Cooling: quench in blue
 	`
-        _______________
-       /               \
-      /   C L A W       \
-     /    F O R G E      \  _____
-    /     * * . * *       \ |     |
-   /________________________| ))) |
-          | ***** |         |_____|
-          |  /|\  |
-          |  ___  |
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        💧  💧  💧  💧  💧
+
+        💧   🌊  🔵  🌊  💧
+
+        💧  💧  💧  💧  💧
+
+
+      · · · quenching · · ·
 `,
-	// Frame 8: BIG SPARKS!
+
+	// Frame 8 — Agents emerge: bots ready
 	`
-     *  _______________  *
-    *  /  *   *    *    \  *
-      /   C L A W   * *  \
-   * /    F O R G E  *    \  _____
-    / * *  * * . * *  * *  \ |     |
-   /________________________\| ))) |
-    *  *  | ***** |  *  *   |_____|
-   *   *  |  /|\  |  *   *
-      *   |  ___  |   *
-          | |^^^| |
-   _______|_|___|_|________
-  |______*..^^^..*_________|
+  ⚒️   C L A W F O R G E   ⚒️
+
+
+        🤖        🤖        🤖
+
+
+           ready to deploy
+
+
+      · · · spawning fleet · · ·
 `,
-	// Frame 9: Forge ready — blade forged
+
+	// Frame 9 — READY: full fleet online
 	`
-        _______________
-       /               \
-      /   C L A W       \
-     /    F O R G E      \
-    /       READY          \
-   /_______________________\
-          |       |
-          |  ---  |
-          |  ___  |
-          | |===| |
-   _______|_|___|_|________
-  |_______ FORGED _________|
+  ✅   C L A W F O R G E   ✅
+
+
+        🤖  🤖  🤖  🤖  🤖
+
+              ONLINE
+
+        ⚒️  fleet forged  ⚒️
+
+
 `,
 }
 
