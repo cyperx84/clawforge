@@ -107,7 +107,7 @@ else
   
   # Table rows
   echo "$COMPAT_REPORT" | jq -r '.[] | 
-    def pad(s; len): . + (" " * (len - (. | length)));
+    def pad(len): . + (" " * (len - (. | length)));
     "\(.agent | pad(12)) \(.model | pad(20)) \(.compat | pad(30)) \(.deprecations)"'
   
   echo ""

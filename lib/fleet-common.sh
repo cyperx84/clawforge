@@ -8,8 +8,8 @@ FLEET_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # ── Paths ──────────────────────────────────────────────────────────────
 OPENCLAW_CONFIG="${OPENCLAW_CONFIG:-${HOME}/.openclaw/openclaw.json}"
-OPENCLAW_AGENTS_DIR="${HOME}/.openclaw/agents"
-OPENCLAW_WORKSPACE="${HOME}/.openclaw/workspace"
+OPENCLAW_AGENTS_DIR="${OPENCLAW_AGENTS_DIR:-${HOME}/.openclaw/agents}"
+OPENCLAW_WORKSPACE="${OPENCLAW_WORKSPACE:-${HOME}/.openclaw/workspace}"
 
 # Workspace files every agent should have
 AGENT_FILES=(SOUL.md AGENTS.md TOOLS.md USER.md IDENTITY.md MEMORY.md HEARTBEAT.md)

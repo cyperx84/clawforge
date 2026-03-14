@@ -28,10 +28,12 @@ run_suite() {
 echo "🔨 ClawForge Fleet Test Suite"
 echo "=============================="
 
-run_suite "fleet-common"  "${SCRIPT_DIR}/test-fleet-common.sh"
-run_suite "fleet-create"  "${SCRIPT_DIR}/test-fleet-create.sh"
-run_suite "fleet-list"    "${SCRIPT_DIR}/test-fleet-list.sh"
-run_suite "fleet-inspect" "${SCRIPT_DIR}/test-fleet-inspect.sh"
+run_suite "fleet-common"       "${SCRIPT_DIR}/test-fleet-common.sh"
+run_suite "fleet-create"       "${SCRIPT_DIR}/test-fleet-create.sh"
+run_suite "fleet-list"         "${SCRIPT_DIR}/test-fleet-list.sh"
+run_suite "fleet-inspect"      "${SCRIPT_DIR}/test-fleet-inspect.sh"
+run_suite "fleet-e2e"          "${SCRIPT_DIR}/test-fleet-e2e.sh"
+run_suite "fleet-config-safety" "${SCRIPT_DIR}/test-fleet-config-safety.sh"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

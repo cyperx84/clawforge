@@ -15,11 +15,6 @@ CLAWFORGE_DIR="$(cd "$(dirname "$SOURCE")/.." && pwd)"
 source "${CLAWFORGE_DIR}/lib/common.sh"
 source "${CLAWFORGE_DIR}/lib/fleet-common.sh"
 
-# ── Paths ──────────────────────────────────────────────────────────────
-OPENCLAW_AGENTS_DIR="${HOME}/.openclaw/agents"
-OPENCLAW_WORKSPACE="${HOME}/.openclaw/workspace"
-OPENCLAW_CONFIG="${HOME}/.openclaw/openclaw.json"
-
 # ── Parse args ──────────────────────────────────────────────────────────
 source_path=""
 new_id=""

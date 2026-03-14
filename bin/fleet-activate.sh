@@ -173,7 +173,8 @@ if [[ -n "$ADD_TO" ]]; then
 fi
 
 # ── Restart gateway ───────────────────────────────────────────────────
-if ! $NO_RESTART; then
+# Skip restart if --no-restart OR CLAWFORGE_SKIP_RESTART=1 (for tests)
+if ! $NO_RESTART && [[ "${CLAWFORGE_SKIP_RESTART:-0}" != "1" ]]; then
   echo ""
   echo "🔄 Restarting gateway..."
   if command -v openclaw &>/dev/null; then
@@ -182,6 +183,8 @@ if ! $NO_RESTART; then
   else
     log_warn "openclaw CLI not found — restart gateway manually"
   fi
+elif [[ "${CLAWFORGE_SKIP_RESTART:-0}" == "1" ]]; then
+  log_debug "Skipping gateway restart (CLAWFORGE_SKIP_RESTART=1)"
 fi
 
 echo ""
