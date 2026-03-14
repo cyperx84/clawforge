@@ -71,8 +71,11 @@ for i in $(seq 0 $((agent_count - 1))); do
   if [[ -n "$binding" && "$binding" != "null" ]]; then
     channel_id=$(echo "$binding" | jq -r '.match.peer.id // empty')
     channel_kind=$(echo "$binding" | jq -r '.match.channel // empty')
-    if [[ -n "$channel_id" ]]; then
-      channel_display="#${channel_kind}:${channel_id: -4}"
+    if [[ -n "$channel_id" && -n "$channel_kind" ]]; then
+      # Try to resolve channel name from guilds config
+      # openclaw.json doesn't store channel names, so use agent_id as the channel name
+      # (each agent has its own channel named after the agent)
+      channel_display="${channel_kind}/#${agent_id}"
     fi
   fi
 

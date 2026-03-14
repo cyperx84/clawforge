@@ -82,10 +82,16 @@ _get_agent() {
 
 _get_workspace() {
   # Resolve agent workspace path — from config or default convention
+  # Priority:
+  #   1. Agent's workspace field in config (if set)
+  #   2. ~/.openclaw/agents/<id>/   (new isolated path)
+  #   3. ~/.openclaw/workspace/agents/<id>/  (legacy nested path)
+  #   Special: "main" agent → ~/.openclaw/workspace/
   local agent_id="$1"
   local agent
   agent=$(_get_agent "$agent_id" 2>/dev/null) || true
 
+  # 1. Explicit workspace field
   if [[ -n "$agent" ]]; then
     local ws
     ws=$(echo "$agent" | jq -r '.workspace // empty')
@@ -95,8 +101,28 @@ _get_workspace() {
     fi
   fi
 
-  # Default convention
-  echo "${OPENCLAW_AGENTS_DIR}/${agent_id}"
+  # Special case: main agent
+  if [[ "$agent_id" == "main" ]]; then
+    echo "${OPENCLAW_WORKSPACE}"
+    return 0
+  fi
+
+  # 2. New isolated path
+  local new_path="${OPENCLAW_AGENTS_DIR}/${agent_id}"
+  if [[ -d "$new_path" ]]; then
+    echo "$new_path"
+    return 0
+  fi
+
+  # 3. Legacy nested path
+  local legacy_path="${OPENCLAW_WORKSPACE}/agents/${agent_id}"
+  if [[ -d "$legacy_path" ]]; then
+    echo "$legacy_path"
+    return 0
+  fi
+
+  # Default to new isolated path (doesn't exist yet)
+  echo "$new_path"
 }
 
 _get_bindings() {
