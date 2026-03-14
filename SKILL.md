@@ -11,7 +11,7 @@ metadata:
   }
 ---
 
-# ClawForge v1.5 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v1.7 — Multi-Mode Coding Workflow + Fleet Ops
 
 ## Overview
 
@@ -21,10 +21,21 @@ ClawForge manages coding agents (Claude Code, Codex) running in tmux sessions on
 - **Review** — Quality gate on an existing PR (analysis only)
 - **Swarm** — Parallel multi-agent orchestration
 
-Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard`, observability commands `cost`, `conflicts`, `templates`, and fleet ops commands `memory`, `init`, `history`.
+Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard`, observability commands `cost`, `conflicts`, `templates`, fleet ops commands `memory`, `init`, `history`, and clwatch integration `changelog`.
 
 ## Quick Start
 
+
+### New in v1.7
+
+```bash
+clawforge changelog check           # One-shot: check for tool updates via clwatch
+clawforge changelog check --auto    # Auto-patch reference files without prompt
+clawforge changelog watch           # Daemon: poll every 6h, patch on changes
+clawforge changelog status          # Show known vs current versions
+clawforge changelog ack claude-code # Mark version as reviewed
+clawforge watch --daemon --changelog  # Agent health + changelog in one daemon
+```
 
 ### New in v0.5
 
@@ -243,6 +254,63 @@ Monitor all active tasks. Detects dead sessions, checks CI, auto-steers on CI fa
 
 Overview: active tasks (with short IDs + modes), status summary, mode breakdown, system health (RAM estimate, disk usage), conflict warnings.
 
+## Changelog Integration (clwatch)
+
+Track tool changelogs and auto-patch reference files when Claude Code, Codex CLI, etc. release new features.
+
+### `clawforge changelog check`
+
+One-shot check for tool updates. Fetches from changelogs.info via clwatch.
+
+```bash
+clawforge changelog check           # Show what changed, prompt to patch
+clawforge changelog check --auto    # Auto-patch without prompt
+clawforge changelog check --notify  # Send Discord notification on changes
+clawforge changelog check --tools claude-code,codex-cli  # Specific tools only
+```
+
+### `clawforge changelog watch`
+
+Daemon mode — polls for changes on a schedule.
+
+```bash
+clawforge changelog watch              # Poll every 6h
+clawforge changelog watch --interval 1h  # Custom interval (min: 15m)
+clawforge changelog watch --auto --notify  # Hands-free auto-patch + notify
+clawforge changelog watch --stop       # Stop the daemon
+```
+
+### `clawforge changelog status`
+
+Show known vs current versions for all tracked tools.
+
+### `clawforge changelog ack <tool>`
+
+Mark a tool version as reviewed (won't prompt to patch again).
+
+```bash
+clawforge changelog ack claude-code
+```
+
+### Integration with watch daemon
+
+Combine agent health monitoring with changelog checking:
+
+```bash
+clawforge watch --daemon --changelog  # Both in one daemon
+```
+
+### Graceful degradation
+
+Works standalone without clwatch. If not installed, prints install instructions and continues normally.
+
+**Reference file mapping:**
+- `claude-code` → `references/claude-code-features.md`
+- `codex-cli` → `references/codex-cli-features.md`
+- `gemini-cli` → `references/gemini-cli-features.md`
+- `opencode` → `references/opencode-features.md`
+- `openclaw` → `references/openclaw-features.md`
+
 ## Direct Module Access
 
 For power users, direct module commands remain available via `clawforge help --all`:
@@ -287,7 +355,10 @@ clawforge learn --task-id abc123 --auto --memory
   "ci_retry_limit": 2,
   "ram_warn_threshold": 3,
   "reviewers": ["claude", "gemini"],
-  "auto_simplify": true
+  "auto_simplify": true,
+  "changelog_check_interval": "6h",
+  "changelog_auto_patch": false,
+  "changelog_tools": "claude-code,codex-cli,gemini-cli,opencode,openclaw"
 }
 ```
 
