@@ -61,50 +61,76 @@ Options:
 
 ## Verify
 ```bash
-clawforge version    # Should show v2.0.0
+clawforge version    # Should show current version (e.g., v1.7.0)
 clawforge help       # Full command list
 clawforge doctor     # Check system health
 ```
 
-## Fleet Quick Start
-
-The fleet-first workflow: create an agent, inspect it, bind it to a channel, activate it.
-
-```bash
-# 1. Create an agent from a template
-clawforge create --from coder --name builder --role "Coding specialist" --emoji 🔧
-
-# 2. Inspect to verify
-clawforge inspect builder
-
-# 3. Bind to a Discord channel
-clawforge bind builder "#builder"
-
-# 4. Activate (adds to OpenClaw config)
-clawforge activate builder
-
-# 5. View fleet
-clawforge list
-```
-
 ## Coding Workflow Quick Start
 
-For the legacy coding workflow (sprint/swarm/review):
+Orchestrate coding agents (Claude Code, Codex) with sprint/review/swarm modes:
 
 ```bash
 # Navigate to any git repo
 cd ~/my-project
 
-# Quick task
-clawforge coding sprint "Fix auth bug"
+# Sprint — single agent, full dev cycle
+clawforge sprint "Add JWT authentication"
+clawforge sprint "Fix typo" --quick    # Auto-merge, skip review
+
+# Review — quality gate on existing PR
+clawforge review --pr 42
+
+# Swarm — parallel multi-agent
+clawforge swarm "Migrate tests to vitest" --max-agents 4
 
 # Monitor
 clawforge status
 clawforge dashboard
 
-# See what changed
-clawforge diff 1
-clawforge logs 1
+# Manage running agents
+clawforge attach 1           # Attach to agent's tmux session
+clawforge steer 1 "Use bcrypt"  # Course-correct
+clawforge stop 1 --yes       # Kill agent
+```
+
+## Fleet Management Quick Start
+
+Create and manage OpenClaw agent fleets:
+
+```bash
+# Create an agent from a template
+clawforge create --from coder --name builder --role "Coding specialist" --emoji 🔧
+
+# Inspect agent config
+clawforge inspect builder
+
+# Bind to a Discord channel
+clawforge bind builder "#builder"
+
+# Activate (adds to OpenClaw config)
+clawforge activate builder
+
+# View fleet
+clawforge list
+```
+
+## Changelog Tracking (clwatch Integration)
+
+Track AI tool changelogs and auto-patch reference files:
+
+```bash
+# Install clwatch first
+brew install cyperx84/tap/clwatch
+
+# Check for updates
+clawforge changelog check
+
+# Auto-patch without prompting
+clawforge changelog check --auto
+
+# Show current versions
+clawforge changelog status
 ```
 
 ## OpenClaw Integration
@@ -118,6 +144,7 @@ This creates the skill at `~/.openclaw/skills/clawforge/` and adds `clawforge` t
 
 ## Learn More
 
-- [Fleet Management](./fleet-management.md) — Full fleet workflow
+- [Workflow Modes](./workflow-modes.md) — sprint, review, swarm
+- [Fleet Management](./fleet-management.md) — Agent fleet workflow
 - [Archetypes](./archetypes.md) — Agent templates
 - [Command Reference](./command-reference.md) — All commands

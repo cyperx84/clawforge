@@ -1,37 +1,41 @@
 # ClawForge Documentation
 
-**ClawForge is an agent fleet forge for OpenClaw.** Create, manage, and orchestrate fleets of specialized AI agents.
+**ClawForge is a multi-mode coding workflow CLI + agent fleet forge.** Two core capabilities:
 
-## Fleet Management
+1. **Coding Workflows** — Sprint, review, swarm modes for orchestrating Claude Code and Codex
+2. **Fleet Management** — Create, manage, and orchestrate fleets of specialized OpenClaw agents
 
-- [Getting Started](./getting-started.md) — Quick start guide
-- [Fleet Management](./fleet-management.md) — How agent fleets work
-- [Archetypes](./archetypes.md) — Built-in and custom templates
-- [clwatch Integration](./clwatch-integration.md) — Optional enrichment with clwatch
-- [Command Reference](./command-reference.md) — Full command documentation
-
-## Legacy Coding Workflows
-
-ClawForge v1 coding workflows are still available:
+## Coding Workflows
 
 - [Workflow Modes](./workflow-modes.md) — sprint, review, swarm
+- [Getting Started](./getting-started.md) — Quick start guide
 - [Scenario Playbooks](./scenarios.md) — Common patterns
 - [Dashboard (Go TUI)](./dashboard.md) — Live monitoring
 - [Architecture](./architecture.md) — System design
+
+## Fleet Management
+
+- [Fleet Management](./fleet-management.md) — How agent fleets work
+- [Archetypes](./archetypes.md) — Built-in and custom templates
+- [clwatch Integration](./clwatch-integration.md) — Changelog tracking
+- [Command Reference](./command-reference.md) — Full command documentation
+
+## Operations
+
 - [Fleet Ops](./fleet-ops.md) — Memory, init, history
 - [Evaluation Loop](./evaluation.md) — Task evaluation
 - [Configuration](./configuration.md) — Config management
 - [Troubleshooting](./troubleshooting.md) — Common issues
 - [FAQ](./faq.md) — Frequently asked questions
 
-## Migration
+## Release & Publishing
 
-- [Migration Guide](./migration-guide.md) — Upgrading from v1 to v2
+- [Release Workflow](./RELEASE.md) — How to cut releases
+- [Publishing Checklist](./PUBLISHING-CHECKLIST.md) — Step-by-step release checklist
 
 ## Version History
 
-- v2.0: Fleet Forge — agent creation, archetypes, fleet management
-- v1.7: clwatch integration
+- v1.7: clwatch integration (changelog tracking)
 - v1.6: quick-run, npm binary downloads
 - v1.5: dependency graph, task chaining
 - v1.4: web dashboard

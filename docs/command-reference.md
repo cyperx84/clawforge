@@ -122,22 +122,30 @@ clawforge upgrade-check
 clawforge upgrade-check --json
 ```
 
-### coding (namespace)
-Legacy coding workflow commands under explicit namespace.
+### sprint
+Run a single agent through a full coding cycle.
 ```bash
-clawforge coding sprint "Fix auth bug"
-clawforge coding review --pr 42
-clawforge coding swarm "Implement auth system"
-clawforge coding attach 1
-clawforge coding steer 1 "Use bcrypt"
-clawforge coding stop 1
+clawforge sprint "Fix auth bug"
+clawforge sprint "Add feature" --quick
+```
+
+### review
+Quality gate on an existing PR.
+```bash
+clawforge review --pr 42
+clawforge review --pr 42 --fix
+```
+
+### swarm
+Orchestrate multiple agents in parallel.
+```bash
+clawforge swarm "Implement auth system"
+clawforge swarm "Implement auth system" --max-agents 4
 ```
 
 ---
 
-## Management (Legacy Coding)
-
-> **Note:** The commands below (`sprint`, `review`, `swarm`) are the v1 coding workflow. They still work but will show a deprecation notice. Prefer `clawforge coding sprint|review|swarm` for explicit routing.
+## Management
 
 ### status
 Show tracked tasks.

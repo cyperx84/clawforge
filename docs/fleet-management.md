@@ -109,7 +109,7 @@ Full removal with safety guards:
 
 ### Migration
 
-If you have agents created before v2.0, migrate them to isolated workspaces:
+If you have agents created with an older version of ClawForge, migrate them to isolated workspaces:
 
 ```bash
 clawforge migrate builder

@@ -212,32 +212,32 @@ brew install cyperx84/tap/clwatch
 
 ---
 
-## Legacy Coding Workflows
+## Coding Workflows
 
-The original ClawForge sprint/review/swarm workflows are still available, now under the `coding` namespace.
+ClawForge provides three primary coding workflow modes for orchestrating AI agents.
 
 ```bash
-# Preferred (v2.0+)
-clawforge coding sprint "Add JWT authentication"
-clawforge coding review --pr 42
-clawforge coding swarm "Migrate tests from jest to vitest"
-
-# Bare forms still work — deprecated, removed in v3.0
+# Sprint — single agent, full dev cycle
 clawforge sprint "Add JWT authentication"
+clawforge sprint "Fix typo" --quick    # Auto-merge, skip review
+
+# Review — quality gate on existing PR
 clawforge review --pr 42
-clawforge swarm "Migrate tests"
+
+# Swarm — parallel multi-agent orchestration
+clawforge swarm "Migrate tests to vitest" --max-agents 4
 ```
 
-### Coding commands quick reference
+### Quick reference
 
 | Command | Description | Key Flags |
 |---------|-------------|-----------|
-| `coding sprint` | Single agent, full dev cycle | `--quick`, `--branch`, `--agent`, `--auto-merge` |
-| `coding review` | Quality gate on PR (analysis only) | `--pr`, `--fix`, `--reviewers` |
-| `coding swarm` | Parallel multi-agent orchestration | `--max-agents`, `--repos`, `--auto-merge` |
-| `coding steer` | Course-correct a running agent | (task ID, message) |
-| `coding attach` | Attach to agent's tmux session | (task ID) |
-| `coding stop` | Stop a running agent | `--yes`, `--clean` |
+| `sprint` | Single agent, full dev cycle | `--quick`, `--branch`, `--agent`, `--auto-merge` |
+| `review` | Quality gate on PR (analysis only) | `--pr`, `--fix`, `--reviewers` |
+| `swarm` | Parallel multi-agent orchestration | `--max-agents`, `--repos`, `--auto-merge` |
+| `steer` | Course-correct a running agent | (task ID, message) |
+| `attach` | Attach to agent's tmux session | (task ID) |
+| `stop` | Stop a running agent | `--yes`, `--clean` |
 
 Full docs: [`docs/workflow-modes.md`](./docs/workflow-modes.md)
 
