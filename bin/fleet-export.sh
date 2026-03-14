@@ -204,7 +204,7 @@ archive_size=$(wc -c < "$output_path" | xargs)
 archive_size_human=$(_human_size "$archive_size")
 
 echo ""
-log_success "✓ Exported agent: ${agent_id}"
+log_info "✓ Exported agent: ${agent_id}"
 echo ""
 echo "  Archive: ${output_path}"
 echo "  Size:    ${archive_size_human}"

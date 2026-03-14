@@ -208,7 +208,7 @@ create_template() {
     log_debug "  ✓ references/"
   fi
 
-  log_success "✓ Created template: ${name}"
+  log_info "✓ Created template: ${name}"
   echo ""
   echo "  Path: ${template_dir}"
   echo ""
@@ -243,7 +243,7 @@ delete_template() {
   # Delete
   rm -rf "$template_dir"
 
-  log_success "✓ Deleted template: ${name}"
+  log_info "✓ Deleted template: ${name}"
 }
 
 # ── Route subcommand ───────────────────────────────────────────────────

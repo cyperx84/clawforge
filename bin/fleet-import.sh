@@ -225,7 +225,7 @@ fi
 
 # ── Show next steps ─────────────────────────────────────────────────────
 echo ""
-log_success "✓ Imported agent: ${new_id}"
+log_info "✓ Imported agent: ${new_id}"
 echo ""
 echo "  Workspace: ${workspace_path}"
 echo "  Model:     ${final_model}"

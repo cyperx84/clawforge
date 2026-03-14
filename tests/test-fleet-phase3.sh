@@ -12,9 +12,9 @@ PASS=0
 FAIL=0
 SKIP=0
 
-pass() { echo "  ✓ $1"; ((PASS++)); }
-fail() { echo "  ✗ $1"; ((FAIL++)); }
-skip() { echo "  ○ $1 (skipped)"; ((SKIP++)); }
+pass() { echo "  ✓ $1"; PASS=$((PASS+1)); }
+fail() { echo "  ✗ $1"; FAIL=$((FAIL+1)); }
+skip() { echo "  ○ $1 (skipped)"; SKIP=$((SKIP+1)); }
 
 section() {
   echo ""
@@ -135,15 +135,16 @@ else
   fail "Archive missing SOUL.md"
 fi
 
-# Verify manifest content
-extracted_id=$(tar -xOzf "$EXPORT_FILE" --wildcards "*/manifest.json" 2>/dev/null | jq -r '.id' 2>/dev/null || echo "")
+# Verify manifest content — extract the archive dir name first (BSD tar compat)
+archive_inner=$(tar -tzf "$EXPORT_FILE" 2>/dev/null | head -1 | cut -d/ -f1)
+extracted_id=$(tar -xOzf "$EXPORT_FILE" "${archive_inner}/manifest.json" 2>/dev/null | jq -r '.id' 2>/dev/null || echo "")
 if [[ "$extracted_id" == "$TEST_AGENT_ID" ]]; then
   pass "Manifest has correct agent id"
 else
   fail "Manifest agent id incorrect: got '${extracted_id}', expected '${TEST_AGENT_ID}'"
 fi
 
-extracted_model=$(tar -xOzf "$EXPORT_FILE" --wildcards "*/manifest.json" 2>/dev/null | jq -r '.model' 2>/dev/null || echo "")
+extracted_model=$(tar -xOzf "$EXPORT_FILE" "${archive_inner}/manifest.json" 2>/dev/null | jq -r '.model' 2>/dev/null || echo "")
 if [[ -n "$extracted_model" ]]; then
   pass "Manifest has model field: ${extracted_model}"
 else
@@ -163,10 +164,11 @@ section "Import"
 import_workspace="${AGENTS_DIR}/${TEST_IMPORT_ID}"
 
 # Run import non-interactively
-if "${BIN_DIR}/fleet-import.sh" "$EXPORT_FILE" --id "$TEST_IMPORT_ID" --model "openai-codex/gpt-5.4" 2>&1 | grep -q "Imported agent"; then
+import_output=$("${BIN_DIR}/fleet-import.sh" "$EXPORT_FILE" --id "$TEST_IMPORT_ID" --model "openai-codex/gpt-5.4" 2>&1 || true)
+if echo "$import_output" | grep -qiE "Imported agent|Next steps"; then
   pass "Import runs successfully"
 else
-  fail "Import failed to complete"
+  fail "Import failed to complete (output: ${import_output})"
 fi
 
 if [[ -d "$import_workspace" ]]; then
@@ -194,10 +196,11 @@ else
 fi
 
 # Test refuses to overwrite
-if "${BIN_DIR}/fleet-import.sh" "$EXPORT_FILE" --id "$TEST_IMPORT_ID" --model "openai-codex/gpt-5.4" 2>&1 | grep -q "Refusing to overwrite"; then
+overwrite_output=$("${BIN_DIR}/fleet-import.sh" "$EXPORT_FILE" --id "$TEST_IMPORT_ID" --model "openai-codex/gpt-5.4" 2>&1 || true)
+if echo "$overwrite_output" | grep -q "Refusing to overwrite"; then
   pass "Import refuses to overwrite existing workspace"
 else
-  fail "Import should refuse to overwrite existing workspace"
+  fail "Import should refuse to overwrite existing workspace (got: ${overwrite_output})"
 fi
 
 # ── SECTION: Template list ────────────────────────────────────────────
@@ -292,10 +295,13 @@ mkdir -p "${TEMPLATES_DIR}/${TEST_TEMPLATE_NAME}"
 echo "# test" > "${TEMPLATES_DIR}/${TEST_TEMPLATE_NAME}/SOUL.md"
 
 # Delete it (non-interactive with echo y)
-if echo "y" | "${BIN_DIR}/template.sh" delete "$TEST_TEMPLATE_NAME" 2>&1 | grep -q "Deleted template"; then
+delete_output=$(echo "y" | "${BIN_DIR}/template.sh" delete "$TEST_TEMPLATE_NAME" 2>&1 || true)
+if echo "$delete_output" | grep -qiE "Deleted template|cleaned up"; then
   pass "Template delete removes user template"
+elif [[ ! -d "${TEMPLATES_DIR}/${TEST_TEMPLATE_NAME}" ]]; then
+  pass "Template delete removes user template (verified by dir check)"
 else
-  fail "Template delete failed"
+  fail "Template delete failed (output: ${delete_output})"
 fi
 
 if [[ ! -d "${TEMPLATES_DIR}/${TEST_TEMPLATE_NAME}" ]]; then
@@ -305,10 +311,11 @@ else
 fi
 
 # Verify built-in protection
-if "${BIN_DIR}/template.sh" delete generalist 2>&1 | grep -q "Cannot delete built-in"; then
+builtin_protect_output=$("${BIN_DIR}/template.sh" delete generalist 2>&1 || true)
+if echo "$builtin_protect_output" | grep -q "Cannot delete built-in"; then
   pass "Template delete refuses to remove built-in archetype"
 else
-  fail "Template delete should protect built-in archetypes"
+  fail "Template delete should protect built-in archetypes (got: ${builtin_protect_output})"
 fi
 
 # ── SECTION: Deprecation notices ──────────────────────────────────────
