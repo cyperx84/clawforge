@@ -43,11 +43,18 @@ Forge and manage fleets of OpenClaw agents.
 Usage: clawforge <command> [options]
 
 Fleet Management:
-  create      Create a new agent (interactive wizard or flags)
-  list        Fleet overview — all agents with status
-  inspect     Deep view of an agent's config, workspace, and bindings
-  activate    Add agent to config and restart gateway
-  apply       Alias for activate
+  create        Create a new agent (interactive wizard or flags)
+  list          Fleet overview — all agents with status
+  inspect       Deep view of an agent's config, workspace, and bindings
+  edit          Open agent workspace files in $EDITOR
+  bind          Wire agent to Discord channel
+  unbind        Remove channel binding
+  clone         Duplicate an agent workspace and config
+  activate      Add agent to config and restart gateway
+  deactivate    Remove agent from config (keep files)
+  destroy       Full removal of agent (requires --yes)
+  migrate       Workspace isolation migration
+  apply         Alias for activate
 
 Workflow Modes:
   quick-run   Direct agent execution in cwd (no branch/worktree overhead)
@@ -92,7 +99,9 @@ Web Dashboard:
   deps        Show task dependency graph / blocked tasks
 
 Tool Integration:
-  changelog   Track and auto-patch reference files from tool changelogs (via clwatch)
+  changelog      Track and auto-patch reference files from tool changelogs (via clwatch)
+  compat         Fleet-wide model/tool compatibility check (via clwatch)
+  upgrade-check  Check for tool updates and affected agents (via clwatch)
 
 Developer Experience:
   profile     Manage reusable agent profiles (presets)
@@ -214,11 +223,20 @@ shift 2>/dev/null || true
 
 case "$COMMAND" in
   # Fleet management (v2.0)
-  create)     exec "${BIN_DIR}/fleet-create.sh" "$@" ;;
-  list)       exec "${BIN_DIR}/fleet-list.sh" "$@" ;;
-  inspect)    exec "${BIN_DIR}/fleet-inspect.sh" "$@" ;;
-  activate)   exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
-  apply)      exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
+  create)       exec "${BIN_DIR}/fleet-create.sh" "$@" ;;
+  list)         exec "${BIN_DIR}/fleet-list.sh" "$@" ;;
+  inspect)      exec "${BIN_DIR}/fleet-inspect.sh" "$@" ;;
+  edit)         exec "${BIN_DIR}/fleet-edit.sh" "$@" ;;
+  bind)         exec "${BIN_DIR}/fleet-bind.sh" bind "$@" ;;
+  unbind)       exec "${BIN_DIR}/fleet-bind.sh" unbind "$@" ;;
+  clone)        exec "${BIN_DIR}/fleet-clone.sh" "$@" ;;
+  activate)     exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
+  deactivate)   exec "${BIN_DIR}/fleet-deactivate.sh" "$@" ;;
+  destroy)      exec "${BIN_DIR}/fleet-destroy.sh" "$@" ;;
+  migrate)      exec "${BIN_DIR}/fleet-migrate.sh" "$@" ;;
+  apply)        exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
+  compat)       exec "${BIN_DIR}/fleet-compat.sh" "$@" ;;
+  upgrade-check) exec "${BIN_DIR}/fleet-upgrade-check.sh" "$@" ;;
 
   # Workflow modes (v0.4)
   sprint)     exec "${BIN_DIR}/sprint.sh" "$@" ;;
