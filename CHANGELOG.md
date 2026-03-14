@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.1
+
+_Release notes pending._
+
 ## v2.0.0 — Fleet Forge Pivot
 
 **ClawForge is now an agent fleet forge for OpenClaw.**
