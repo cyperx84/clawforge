@@ -46,7 +46,7 @@ Fleet Management:
   create        Create a new agent (interactive wizard or flags)
   list          Fleet overview — all agents with status
   inspect       Deep view of an agent's config, workspace, and bindings
-  edit          Open agent workspace files in $EDITOR
+  edit          Open agent workspace files in \$EDITOR
   bind          Wire agent to Discord channel
   unbind        Remove channel binding
   clone         Duplicate an agent workspace and config
