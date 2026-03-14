@@ -17,6 +17,7 @@ Options:
   --dry-run    Don't auto-respawn or update registry
   --daemon     Run continuously in background (interval: 5 min)
   --interval N Daemon check interval in seconds (default: 300)
+  --changelog  Enable changelog checks in daemon (requires clwatch)
   --stop       Stop the running daemon
   --help       Show this help
 EOF
@@ -27,6 +28,8 @@ DRY_RUN=false
 DAEMON=false
 DAEMON_INTERVAL=300
 STOP_DAEMON=false
+ENABLE_CHANGELOG=false
+LAST_CHANGELOG_CHECK=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,6 +37,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run)    DRY_RUN=true; shift ;;
     --daemon)     DAEMON=true; shift ;;
     --interval)   DAEMON_INTERVAL="$2"; shift 2 ;;
+    --changelog)  ENABLE_CHANGELOG=true; shift ;;
     --stop)       STOP_DAEMON=true; shift ;;
     --help|-h)    usage; exit 0 ;;
     *)            log_error "Unknown option: $1"; usage; exit 1 ;;
@@ -277,6 +281,34 @@ if $DAEMON; then
 
   while true; do
     sleep "$DAEMON_INTERVAL"
+
+    # Periodic changelog check (if enabled)
+    if $ENABLE_CHANGELOG; then
+      local now_ts changelog_interval last_check_ts
+      now_ts=$(date +%s)
+
+      # Get changelog check interval from config (default 6h = 21600s)
+      changelog_interval=$(config_get "changelog_check_interval" "6h")
+      if [[ "$changelog_interval" =~ ^([0-9]+)h$ ]]; then
+        changelog_interval=$((${BASH_REMATCH[1]} * 3600))
+      elif [[ "$changelog_interval" =~ ^([0-9]+)m$ ]]; then
+        changelog_interval=$((${BASH_REMATCH[1]} * 60))
+      else
+        changelog_interval=$((6 * 3600))  # default 6h
+      fi
+
+      if [[ -f "${CLAWFORGE_DIR}/watch.changelog-last-check" ]]; then
+        last_check_ts=$(cat "${CLAWFORGE_DIR}/watch.changelog-last-check" 2>/dev/null || echo 0)
+      else
+        last_check_ts=0
+      fi
+
+      if [[ $((now_ts - last_check_ts)) -ge $changelog_interval ]]; then
+        log_debug "Running periodic changelog check..."
+        "${SCRIPT_DIR}/changelog.sh" check --auto 2>/dev/null || true
+        echo "$now_ts" > "${CLAWFORGE_DIR}/watch.changelog-last-check"
+      fi
+    fi
 
     # Re-run the check (re-read tasks from registry)
     TASKS=$(jq -c '.tasks[]' "$REGISTRY_FILE" 2>/dev/null || true)

@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.7.0 — clwatch Integration
+
+### clwatch Integration (requires clwatch)
+- New `clawforge changelog` command for tracking tool changelogs via clwatch
+- `changelog check` — one-shot update check
+  - Auto-patch reference files when tool capabilities change
+  - `--auto` flag for hands-free patching
+  - `--notify` sends Discord notification on changes
+  - `--webhook URL` POSTs changes to custom webhook
+- `changelog watch` — polling daemon mode
+  - Configurable interval (default: 6h, min: 15m)
+  - Integrates with `clawforge watch --daemon --changelog`
+- `changelog status` — show known vs current versions
+- `changelog ack <tool>` — acknowledge version as reviewed
+- New `patch-references.sh` standalone patcher utility
+  - Accepts clwatch JSON payload and patches reference files
+  - `--auto` and `--dry-run` modes
+- Graceful degradation: works standalone without clwatch installed
+- Reference file auto-detection: `~/.clawforge/references/`, `cwd/references/`, or custom `--refs-dir`
+- Integrates with existing `watch --daemon` via `--changelog` flag
+  - Runs changelog check on configured interval (default 6h)
+  - Auto-patches if `changelog_auto_patch` config is enabled
+
+### Config Additions
+- `changelog_check_interval`: How often daemon checks for updates (default: "6h")
+- `changelog_auto_patch`: Auto-patch without confirmation (default: false)
+- `changelog_refs_dir`: Custom references directory path (default: auto-detect)
+- `changelog_tools`: Comma-separated list of tools to monitor (default: "claude-code,codex-cli,gemini-cli,opencode,openclaw")
+
 ## v1.6.3 — npm Binary Download on Install
 
 ### Fixed

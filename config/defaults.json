@@ -12,6 +12,10 @@
   "review_prompt": "Review this pull request for:\n1. Bugs and logic errors\n2. Edge cases and error handling\n3. Security issues\n4. Performance concerns\n5. Code quality and conventions\n\nRespond with: APPROVE, REQUEST_CHANGES, or COMMENT. Then list findings.",
   "vault_path": "/Users/cyperx/Library/Mobile Documents/iCloud~md~obsidian/Documents/cyperx",
   "vault_max_lines": 2000,
+  "changelog_check_interval": "6h",
+  "changelog_auto_patch": false,
+  "changelog_refs_dir": "",
+  "changelog_tools": "claude-code,codex-cli,gemini-cli,opencode,openclaw",
   "notify": {
     "builderChannel": "channel:1476433491452498000",
     "clawChannel": "channel:1476433489791553607",

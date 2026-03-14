@@ -86,6 +86,9 @@ Web Dashboard (v1.4):
   web         Launch web dashboard (accessible from phone/browser)
   deps        Show task dependency graph / blocked tasks
 
+Tool Integration (v1.7):
+  changelog   Track and auto-patch reference files from tool changelogs (via clwatch)
+
 Developer Experience (v1.3):
   profile     Manage reusable agent profiles (presets)
   replay      Re-run a completed task with same parameters
@@ -255,6 +258,7 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   deps)       exec "${BIN_DIR}/deps.sh" "$@" ;;
   logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
   on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
+  changelog)  exec "${BIN_DIR}/changelog.sh" "$@" ;;
 
   # Direct module access (hidden from main help)
   scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;
