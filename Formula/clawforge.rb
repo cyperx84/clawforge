@@ -2,6 +2,7 @@ class Clawforge < Formula
   desc "Forge and manage fleets of OpenClaw agents"
   homepage "https://github.com/cyperx84/clawforge"
   url "https://github.com/cyperx84/clawforge/archive/refs/tags/v2.0.0.tar.gz"
+  sha256 "577cdf0e2cac9030e6ef20e6ba6a582c3a810bb43043b4fbc44c288996f514d7"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "MIT"
   head "https://github.com/cyperx84/clawforge.git", branch: "main"
