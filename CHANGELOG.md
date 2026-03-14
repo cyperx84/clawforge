@@ -1,5 +1,47 @@
 # Changelog
 
+## v2.0.0 — Fleet Forge Pivot
+
+**ClawForge is now an agent fleet forge for OpenClaw.**
+
+### New: Fleet Management
+- `create` — Interactive agent creation wizard with archetype templates
+- `list` — Fleet overview with status indicators
+- `inspect` — Deep view of agent DNA (config + workspace + bindings)
+- `edit` — Open agent workspace files in $EDITOR
+- `bind`/`unbind` — Wire agents to Discord channels
+- `clone` — Duplicate an agent
+- `activate`/`deactivate` — Agent lifecycle management
+- `destroy` — Full agent removal with safety guards
+- `migrate` — Workspace isolation migration
+- `export`/`import` — Share agents as .clawforge archives
+- `template` — Manage agent archetypes (list/show/create/delete)
+- `compat` — Fleet-wide model/tool compatibility (via clwatch)
+- `upgrade-check` — Tool upgrade recommendations (via clwatch)
+- `doctor` expanded with Fleet Health and Tool Versions sections
+
+### New: Built-in Archetypes
+- 5 templates: generalist, coder, monitor, researcher, communicator
+- {{PLACEHOLDER}} substitution for name, role, emoji
+
+### New: clwatch Integration
+- Optional enrichment — works without clwatch, smarter with it
+- Model compatibility checks during agent creation
+- Fleet-wide deprecation monitoring
+- Tool version tracking in doctor
+
+### Changed
+- `sprint`, `review`, `swarm` now show deprecation notice
+- Use `clawforge coding sprint|review|swarm` for explicit routing
+- README rewritten fleet-first
+- SKILL.md updated for OpenClaw fleet integration
+
+### Unchanged
+- All v1 coding workflow commands still work
+- Installation methods unchanged (brew, npm, uv, bun, source)
+
+---
+
 ## v1.7.0 — clwatch Integration
 
 ### clwatch Integration (requires clwatch)

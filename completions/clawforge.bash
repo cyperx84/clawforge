@@ -5,7 +5,10 @@ _clawforge() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  commands="sprint swarm review scope spawn stop steer attach check status
+  # Fleet commands + legacy coding commands
+  commands="create list inspect edit bind unbind clone activate deactivate destroy
+    migrate export import template compat upgrade-check coding
+    sprint swarm review scope spawn stop steer attach check status
     cost conflicts merge history eval learn clean templates init routing
     resume diff pr doctor logs on-complete dashboard config multi-review
     summary parse-cost profile replay export completions help version"
@@ -13,6 +16,18 @@ _clawforge() {
   case "$prev" in
     clawforge)
       COMPREPLY=($(compgen -W "$commands" -- "$cur"))
+      return 0
+      ;;
+    create)
+      COMPREPLY=($(compgen -W "--from --name --role --emoji --model --channel --dry-run --help" -- "$cur"))
+      return 0
+      ;;
+    template)
+      COMPREPLY=($(compgen -W "list show create delete" -- "$cur"))
+      return 0
+      ;;
+    coding)
+      COMPREPLY=($(compgen -W "sprint review swarm attach steer stop" -- "$cur"))
       return 0
       ;;
     config)
@@ -25,6 +40,10 @@ _clawforge() {
       ;;
     export)
       COMPREPLY=($(compgen -W "--format --status --since --save" -- "$cur"))
+      return 0
+      ;;
+    --from)
+      COMPREPLY=($(compgen -W "generalist coder monitor researcher communicator" -- "$cur"))
       return 0
       ;;
     --agent)

@@ -3,6 +3,25 @@
 _clawforge() {
   local -a commands
   commands=(
+    # Fleet commands
+    'create:Create a new agent'
+    'list:Fleet overview'
+    'inspect:Deep view of agent DNA'
+    'edit:Open agent workspace files'
+    'bind:Wire agent to Discord channel'
+    'unbind:Remove channel binding'
+    'clone:Duplicate an agent'
+    'activate:Add agent to config and restart'
+    'deactivate:Remove agent from config'
+    'destroy:Full removal of agent'
+    'migrate:Workspace isolation migration'
+    'export:Package agent as archive'
+    'import:Import agent archive'
+    'template:Manage agent templates'
+    'compat:Fleet compatibility check'
+    'upgrade-check:Check for tool updates'
+    'coding:Legacy coding workflow commands'
+    # Legacy coding commands
     'sprint:Single focused task'
     'swarm:Decompose into parallel subtasks'
     'review:Review a PR with AI'
@@ -36,7 +55,6 @@ _clawforge() {
     'parse-cost:Parse cost from agent output'
     'profile:Manage agent profiles'
     'replay:Re-run a completed task'
-    'export:Export task history'
     'completions:Install shell completions'
     'version:Show version'
     'help:Show help'
@@ -52,6 +70,23 @@ _clawforge() {
       ;;
     args)
       case "$words[1]" in
+        create)
+          _arguments \
+            '--from[Archetype template]:template:(generalist coder monitor researcher communicator)' \
+            '--name[Agent name]:name:' \
+            '--role[Agent role description]:role:' \
+            '--emoji[Agent emoji]:emoji:' \
+            '--model[Default model]:model:' \
+            '--channel[Discord channel]:channel:' \
+            '--dry-run[Preview without creating]' \
+            '--help[Show help]'
+          ;;
+        template)
+          _values 'subcommand' 'list[List templates]' 'show[Show template details]' 'create[Create custom template]' 'delete[Delete template]'
+          ;;
+        coding)
+          _values 'subcommand' sprint review swarm attach steer stop
+          ;;
         config)
           _values 'subcommand' show get set unset init path
           ;;

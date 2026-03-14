@@ -1,9 +1,8 @@
 class Clawforge < Formula
-  desc "Multi-mode coding workflow CLI for orchestrating AI coding agents"
+  desc "Forge and manage fleets of OpenClaw agents"
   homepage "https://github.com/cyperx84/clawforge"
-  url "https://github.com/cyperx84/clawforge/archive/refs/tags/v1.7.0.tar.gz"
-  sha256 "1507ed093b836903cb8036ab8a9da603d074681540c9cda5b1551c1a8e7efb58"
-  sha256 "1507ed093b836903cb8036ab8a9da603d074681540c9cda5b1551c1a8e7efb58"
+  url "https://github.com/cyperx84/clawforge/archive/refs/tags/v2.0.0.tar.gz"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "MIT"
   head "https://github.com/cyperx84/clawforge.git", branch: "main"
 
@@ -16,6 +15,7 @@ class Clawforge < Formula
     libexec.install Dir["bin/*"]
     libexec.install Dir["lib"]
     libexec.install Dir["tui"]
+    libexec.install Dir["config"]
     libexec.install "VERSION"
     libexec.install "registry"
 

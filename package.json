@@ -1,7 +1,7 @@
 {
   "name": "@cyperx/clawforge",
-  "version": "1.7.0",
-  "description": "Multi-mode coding workflow CLI for orchestrating AI coding agents",
+  "version": "2.0.0",
+  "description": "Forge and manage fleets of OpenClaw agents",
   "bin": {
     "clawforge": "./bin/clawforge",
     "clawforge-dashboard": "./bin/clawforge-dashboard",
@@ -16,8 +16,9 @@
   },
   "keywords": [
     "cli",
-    "coding",
+    "fleet",
     "agents",
+    "openclaw",
     "orchestration",
     "tmux",
     "worktree"
@@ -37,6 +38,7 @@
     "tui/",
     "web/",
     "registry/",
+    "config/",
     "VERSION",
     "README.md",
     "LICENSE"

@@ -1,6 +1,143 @@
 # Command Reference
 
-## Management
+## Fleet Commands
+
+### create
+Interactive agent creation wizard.
+```bash
+clawforge create
+clawforge create --from coder --name builder --role "Coding specialist" --emoji 🔧
+clawforge create --from generalist --name myagent --channel "#general"
+```
+Flags:
+- `--from` — Archetype template (generalist, coder, monitor, researcher, communicator)
+- `--name` — Agent name
+- `--role` — Role description
+- `--emoji` — Agent emoji
+- `--model` — Default model override
+- `--channel` — Discord channel to bind
+- `--dry-run` — Preview without creating
+
+### list
+Fleet overview with status indicators.
+```bash
+clawforge list
+clawforge list --json
+```
+
+### inspect
+Deep view of agent DNA — config, workspace, and bindings.
+```bash
+clawforge inspect builder
+clawforge inspect builder --json
+```
+
+### edit
+Open agent workspace files in `$EDITOR`.
+```bash
+clawforge edit builder
+clawforge edit builder soul       # Edit SOUL.md specifically
+```
+
+### bind
+Wire agent to a Discord channel.
+```bash
+clawforge bind builder "#builder"
+clawforge bind builder 1234567890
+```
+
+### unbind
+Remove channel binding from an agent.
+```bash
+clawforge unbind builder
+```
+
+### clone
+Duplicate an agent with all its configuration.
+```bash
+clawforge clone builder builder-v2
+```
+
+### activate
+Add agent to OpenClaw config and restart.
+```bash
+clawforge activate builder
+clawforge activate builder --no-restart
+```
+
+### deactivate
+Remove agent from active config (agent still exists).
+```bash
+clawforge deactivate builder
+```
+
+### destroy
+Full agent removal with safety guards.
+```bash
+clawforge destroy builder --yes
+clawforge destroy builder --yes --keep-workspace
+```
+
+### migrate
+Migrate agent to isolated workspace.
+```bash
+clawforge migrate builder
+clawforge migrate --all
+```
+
+### export (agent)
+Package an agent as a `.clawforge` archive.
+```bash
+clawforge export builder
+clawforge export builder --output ~/backups/builder.clawforge
+```
+
+### import
+Import an agent from a `.clawforge` archive.
+```bash
+clawforge import builder.clawforge
+clawforge import builder.clawforge --name builder-copy
+```
+
+### template
+Manage agent archetypes.
+```bash
+clawforge template list
+clawforge template show coder
+clawforge template create my-template
+clawforge template delete my-template
+```
+
+### compat
+Fleet-wide model/tool compatibility check (requires clwatch).
+```bash
+clawforge compat
+clawforge compat --json
+```
+
+### upgrade-check
+Tool upgrade recommendations (requires clwatch).
+```bash
+clawforge upgrade-check
+clawforge upgrade-check --json
+```
+
+### coding (namespace)
+Legacy coding workflow commands under explicit namespace.
+```bash
+clawforge coding sprint "Fix auth bug"
+clawforge coding review --pr 42
+clawforge coding swarm "Implement auth system"
+clawforge coding attach 1
+clawforge coding steer 1 "Use bcrypt"
+clawforge coding stop 1
+```
+
+---
+
+## Management (Legacy Coding)
+
+> **Note:** The commands below (`sprint`, `review`, `swarm`) are the v1 coding workflow. They still work but will show a deprecation notice. Prefer `clawforge coding sprint|review|swarm` for explicit routing.
 
 ### status
 Show tracked tasks.

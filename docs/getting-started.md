@@ -10,12 +10,12 @@ brew install clawforge
 
 ### npm
 ```bash
-npm install -g @cyperx84/clawforge
+npm install -g @cyperx/clawforge
 ```
 
 ### bun
 ```bash
-bun install -g @cyperx84/clawforge
+bun install -g @cyperx/clawforge
 ```
 
 ### uv (Python)
@@ -47,8 +47,8 @@ Options:
 | Method | Command |
 |--------|---------|
 | Homebrew | `brew upgrade clawforge` |
-| npm | `npm update -g @cyperx84/clawforge` |
-| bun | `bun update -g @cyperx84/clawforge` |
+| npm | `npm update -g @cyperx/clawforge` |
+| bun | `bun update -g @cyperx/clawforge` |
 | uv | `uv tool upgrade clawforge` |
 | pip | `pip install --upgrade clawforge` |
 | Source | `git pull && ./install.sh` |
@@ -56,22 +56,47 @@ Options:
 ## Prerequisites
 - bash, jq, git, tmux
 - gh CLI (authenticated via `gh auth login`)
-- At least one coding agent: `claude` and/or `codex`
+- OpenClaw (for fleet management)
+- At least one AI agent: `claude` and/or `codex` (for coding workflows)
 
 ## Verify
 ```bash
-clawforge version    # Should show v1.1.0
+clawforge version    # Should show v2.0.0
 clawforge help       # Full command list
 clawforge doctor     # Check system health
 ```
 
-## First Run
+## Fleet Quick Start
+
+The fleet-first workflow: create an agent, inspect it, bind it to a channel, activate it.
+
+```bash
+# 1. Create an agent from a template
+clawforge create --from coder --name builder --role "Coding specialist" --emoji 🔧
+
+# 2. Inspect to verify
+clawforge inspect builder
+
+# 3. Bind to a Discord channel
+clawforge bind builder "#builder"
+
+# 4. Activate (adds to OpenClaw config)
+clawforge activate builder
+
+# 5. View fleet
+clawforge list
+```
+
+## Coding Workflow Quick Start
+
+For the legacy coding workflow (sprint/swarm/review):
+
 ```bash
 # Navigate to any git repo
 cd ~/my-project
 
 # Quick task
-clawforge sprint "Fix auth bug" --quick
+clawforge coding sprint "Fix auth bug"
 
 # Monitor
 clawforge status
@@ -90,3 +115,9 @@ ClawForge works as an OpenClaw skill:
 ```
 
 This creates the skill at `~/.openclaw/skills/clawforge/` and adds `clawforge` to your PATH.
+
+## Learn More
+
+- [Fleet Management](./fleet-management.md) — Full fleet workflow
+- [Archetypes](./archetypes.md) — Agent templates
+- [Command Reference](./command-reference.md) — All commands

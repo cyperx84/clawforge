@@ -1,14 +1,14 @@
 [project]
 name = "clawforge-cli"
-version = "1.7.0"
-description = "Multi-mode coding workflow CLI for orchestrating AI coding agents"
+version = "2.0.0"
+description = "Forge and manage fleets of OpenClaw agents"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
 authors = [
     {name = "cyperx84"}
 ]
-keywords = ["cli", "coding", "agents", "orchestration"]
+keywords = ["cli", "fleet", "agents", "openclaw", "orchestration"]
 
 [project.urls]
 Homepage = "https://github.com/cyperx84/clawforge"
