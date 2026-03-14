@@ -13,10 +13,6 @@
 
 Build agents, shape their identity, wire them to channels, deploy fleets — then run coding workflows or anything else.
 
-## Inspired By
-
-This project was inspired by [Elvis's "OpenClaw + Codex/Claude Code Agent Swarm" workflow](https://x.com/elvissun/article/2025920521871716562) — a battle-tested system for managing a fleet of AI coding agents.
-
 ---
 
 ## Quick Start

@@ -61,7 +61,7 @@ Options:
 
 ## Verify
 ```bash
-clawforge version    # Should show current version (e.g., v1.7.0)
+clawforge version    # Should show current version (e.g., v2.0.0)
 clawforge help       # Full command list
 clawforge doctor     # Check system health
 ```
