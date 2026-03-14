@@ -472,7 +472,7 @@ cmd_status() {
 
       if [[ -n "$tool_id" ]]; then
         local latest
-        latest=$(clwatch versions "$tool_id" --json 2>/dev/null | jq -r '.latest // "?"' || echo "?")
+        latest=$(clwatch list --json 2>/dev/null | jq -r --arg tid "$tool_id" '.[] | select(.tool == $tid) | .version // "?"' || echo "?")
         echo "  $filename: local=$local_version, latest=$latest"
       else
         echo "  $filename: $local_version (unmapped tool)"
