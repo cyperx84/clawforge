@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
-# doctor.sh — Diagnose and fix orphaned resources
+# doctor.sh — Diagnose and fix orphaned resources + fleet health
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
+source "${SCRIPT_DIR}/../lib/fleet-common.sh"
+
+# Optional clwatch integration
+if [[ -f "${SCRIPT_DIR}/../lib/clwatch-bridge.sh" ]]; then
+  source "${SCRIPT_DIR}/../lib/clwatch-bridge.sh"
+else
+  _has_clwatch() { false; }
+  _get_tool_versions() { echo "{}"; }
+  _get_deprecations() { echo "[]"; }
+fi
 
 usage() {
   cat <<EOF
 Usage: clawforge doctor [options]
 
-Diagnose orphaned sessions, dangling worktrees, stale tasks, and disk usage.
+Diagnose fleet health, orphaned sessions, dangling worktrees, and disk usage.
 
 Options:
   --fix       Auto-fix issues (kill orphans, remove dangling, archive stale)
@@ -43,7 +53,150 @@ check() {
 echo "🩺 ClawForge Doctor"
 echo ""
 
+# ═══════════════════════════════════════════════════════════════════════
+# FLEET HEALTH (v2.0)
+# ═══════════════════════════════════════════════════════════════════════
+
+echo "── Fleet Health ──────────────────────────"
+
+# Config valid
+if [[ -f "$OPENCLAW_CONFIG" ]]; then
+  if jq empty "$OPENCLAW_CONFIG" 2>/dev/null; then
+    check OK "Config valid (openclaw.json parses)"
+  else
+    check ERROR "Config malformed (openclaw.json)"
+    ISSUES=$((ISSUES+1))
+  fi
+else
+  check WARN "No openclaw.json found at $OPENCLAW_CONFIG"
+  ISSUES=$((ISSUES+1))
+fi
+
+# Agent count + workspace count
+AGENT_COUNT=$(_list_agents | jq 'length' 2>/dev/null || echo 0)
+WORKSPACE_COUNT=0
+CONFIG_ONLY_COUNT=0
+
+if [[ "$AGENT_COUNT" -gt 0 ]]; then
+  while IFS= read -r agent_id; do
+    [[ -z "$agent_id" ]] && continue
+    ws=$(_get_workspace "$agent_id")
+    if [[ -d "$ws" ]]; then
+      WORKSPACE_COUNT=$((WORKSPACE_COUNT + 1))
+    else
+      CONFIG_ONLY_COUNT=$((CONFIG_ONLY_COUNT + 1))
+    fi
+  done < <(_list_agents | jq -r '.[].id' 2>/dev/null || true)
+  
+  check OK "$AGENT_COUNT agents configured, $WORKSPACE_COUNT workspaces found"
+  
+  if [[ "$CONFIG_ONLY_COUNT" -gt 0 ]]; then
+    check WARN "$CONFIG_ONLY_COUNT agents in config have no workspace"
+  fi
+fi
+
+# Missing workspace files
+MISSING_IDENTITY=()
+for agent_id in $(_list_agents | jq -r '.[].id' 2>/dev/null || true); do
+  [[ -z "$agent_id" ]] && continue
+  ws=$(_get_workspace "$agent_id")
+  if [[ -d "$ws" ]]; then
+    identity_file="${ws}/IDENTITY.md"
+    if [[ -f "$identity_file" ]]; then
+      status=$(_workspace_file_status "$identity_file")
+      if [[ "$status" == "unfilled" || "$status" == "template" ]]; then
+        MISSING_IDENTITY+=("$agent_id")
+      fi
+    fi
+  fi
+done
+
+if [[ ${#MISSING_IDENTITY[@]} -gt 0 ]]; then
+  check WARN "${#MISSING_IDENTITY[@]} agent(s) with unfilled IDENTITY.md: ${MISSING_IDENTITY[*]}"
+fi
+
+# Binding validation
+BINDING_ISSUES=0
+if [[ -f "$OPENCLAW_CONFIG" ]]; then
+  BINDINGS=$(jq '.bindings // []' "$OPENCLAW_CONFIG" 2>/dev/null || echo "[]")
+  BINDING_COUNT=$(echo "$BINDINGS" | jq 'length')
+  
+  # Check each binding references a valid agent
+  while IFS= read -r binding; do
+    [[ -z "$binding" ]] && continue
+    agent_id=$(echo "$binding" | jq -r '.agentId')
+    if ! _agent_exists_in_config "$agent_id"; then
+      check WARN "Binding references non-existent agent: $agent_id"
+      BINDING_ISSUES=$((BINDING_ISSUES + 1))
+    fi
+  done < <(echo "$BINDINGS" | jq -c '.[]' 2>/dev/null || true)
+fi
+
+if [[ $BINDING_ISSUES -eq 0 ]]; then
+  check OK "All bindings valid"
+fi
+
+# Orphaned workspaces (workspace exists but no config entry)
+ORPHANED_WORKSPACES=()
+if [[ -d "$OPENCLAW_AGENTS_DIR" ]]; then
+  for ws_dir in "$OPENCLAW_AGENTS_DIR"/*/; do
+    [[ ! -d "$ws_dir" ]] && continue
+    agent_id=$(basename "$ws_dir")
+    if ! _agent_exists_in_config "$agent_id"; then
+      ORPHANED_WORKSPACES+=("$agent_id")
+    fi
+  done
+fi
+
+if [[ ${#ORPHANED_WORKSPACES[@]} -gt 0 ]]; then
+  check WARN "${#ORPHANED_WORKSPACES[@]} orphaned workspace(s): ${ORPHANED_WORKSPACES[*]}"
+else
+  check OK "No orphaned workspaces"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════
+# TOOL VERSIONS (via clwatch, optional)
+# ═══════════════════════════════════════════════════════════════════════
+
+echo ""
+echo "── Tool Versions ─────────────────────────"
+
+if _has_clwatch; then
+  # Get tool versions
+  VERSIONS_JSON=$(_get_tool_versions 2>/dev/null || echo "{}")
+  
+  # Check common tools
+  for tool in claude-code codex-cli openclaw; do
+    version_info=$(echo "$VERSIONS_JSON" | jq -r --arg t "$tool" '.[$t] // empty' 2>/dev/null || true)
+    if [[ -n "$version_info" ]]; then
+      current=$(echo "$version_info" | jq -r '.current // "unknown"')
+      latest=$(echo "$version_info" | jq -r '.latest // "unknown"')
+      if [[ "$current" == "$latest" ]]; then
+        check OK "$tool $current (current)"
+      else
+        check WARN "$tool $current → $latest available"
+      fi
+    fi
+  done
+  
+  # Check for deprecations
+  DEPRECATIONS=$(_get_deprecations 2>/dev/null || echo "[]")
+  DEP_COUNT=$(echo "$DEPRECATIONS" | jq 'length' 2>/dev/null || echo 0)
+  if [[ "$DEP_COUNT" -gt 0 ]]; then
+    check WARN "$DEP_COUNT deprecation(s) affecting fleet (run 'clawforge compat' for details)"
+  else
+    check OK "No deprecations"
+  fi
+else
+  check OK "Tool version checking requires clwatch (optional)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════
+# EXISTING DOCTOR CHECKS (coding workflow health)
+# ═══════════════════════════════════════════════════════════════════════
+
 # 1. Registry integrity
+echo ""
 echo "── Registry ──────────────────────────────"
 if [[ -f "$REGISTRY_FILE" ]]; then
   if jq empty "$REGISTRY_FILE" 2>/dev/null; then
