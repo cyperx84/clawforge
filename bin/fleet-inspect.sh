@@ -94,7 +94,9 @@ skills=$(echo "$agent" | jq -r '.skills // "all (no filter)"')
 heartbeat_info="empty (no periodic tasks)"
 if [[ -f "${workspace}/HEARTBEAT.md" ]]; then
   hb_content=$(cat "${workspace}/HEARTBEAT.md" 2>/dev/null || true)
-  hb_tasks=$(echo "$hb_content" | grep -c '^- ' 2>/dev/null || echo "0")
+  hb_tasks=$(echo "$hb_content" | grep -c '^- ' 2>/dev/null || echo 0)
+  hb_tasks="${hb_tasks//[^0-9]/}"
+  hb_tasks="${hb_tasks:-0}"
   if [[ "$hb_tasks" -gt 0 ]]; then
     heartbeat_info="${hb_tasks} task(s) configured"
   fi

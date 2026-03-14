@@ -49,7 +49,7 @@ Fleet Management:
   activate    Add agent to config and restart gateway
   apply       Alias for activate
 
-Coding Workflow:
+Workflow Modes:
   quick-run   Direct agent execution in cwd (no branch/worktree overhead)
   sprint      Single agent, full dev cycle (the workhorse)
   review      Quality gate on an existing PR (analysis only)
