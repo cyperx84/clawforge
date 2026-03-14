@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# clawforge — Unified CLI for agent swarm workflow
+# clawforge — Forge and manage fleets of OpenClaw agents
 # Routes subcommands to individual module scripts.
 set -euo pipefail
 
@@ -38,11 +38,18 @@ show_help() {
 
   cat <<EOF
 $(show_version)
-Multi-mode coding workflow CLI — from quick patches to parallel agent orchestration.
+Forge and manage fleets of OpenClaw agents.
 
 Usage: clawforge <command> [options]
 
-Workflow Modes:
+Fleet Management:
+  create      Create a new agent (interactive wizard or flags)
+  list        Fleet overview — all agents with status
+  inspect     Deep view of an agent's config, workspace, and bindings
+  activate    Add agent to config and restart gateway
+  apply       Alias for activate
+
+Coding Workflow:
   quick-run   Direct agent execution in cwd (no branch/worktree overhead)
   sprint      Single agent, full dev cycle (the workhorse)
   review      Quality gate on an existing PR (analysis only)
@@ -59,43 +66,41 @@ Management:
   watch       Monitor agent health (supports --daemon)
   dashboard   Live TUI dashboard with vim keybindings
 
-Observability (v0.5):
+Observability:
   cost        Token/cost tracking and budget management
   conflicts   Swarm conflict detection and resolution
   templates   Task template management
+  logs        Capture agent output from tmux (without attaching)
+  on-complete Fire completion hooks for finished tasks
 
-Fleet Ops (v0.6):
+Fleet Ops:
   memory      Per-repo agent memory (show, add, search, forget, clear)
   init        Scan project and generate initial memory entries
   history     Show completed task history
 
-Reliability (v0.7):
+Reliability:
   doctor      Diagnose orphaned sessions, dangling worktrees, stale tasks
 
-Observability (v0.9):
-  logs        Capture agent output from tmux (without attaching)
-  on-complete Fire completion hooks for finished tasks
-
-Power Features (v1.2):
+Power Features:
   config      Manage user configuration (~/.clawforge/config.json)
   multi-review Run PR through multiple models and compare feedback
   summary     AI-generated summary of what an agent did
   parse-cost  Parse real cost/token data from agent output
 
-Web Dashboard (v1.4):
+Web Dashboard:
   web         Launch web dashboard (accessible from phone/browser)
   deps        Show task dependency graph / blocked tasks
 
-Tool Integration (v1.7):
+Tool Integration:
   changelog   Track and auto-patch reference files from tool changelogs (via clwatch)
 
-Developer Experience (v1.3):
+Developer Experience:
   profile     Manage reusable agent profiles (presets)
   replay      Re-run a completed task with same parameters
   export      Export task history as markdown/JSON report
   completions Install shell tab completions (bash/zsh/fish)
 
-Evaluation (v0.6.2):
+Evaluation:
   eval        Run-eval logging and weekly summaries
 
 Lifecycle:
@@ -208,6 +213,13 @@ COMMAND="${1:-help}"
 shift 2>/dev/null || true
 
 case "$COMMAND" in
+  # Fleet management (v2.0)
+  create)     exec "${BIN_DIR}/fleet-create.sh" "$@" ;;
+  list)       exec "${BIN_DIR}/fleet-list.sh" "$@" ;;
+  inspect)    exec "${BIN_DIR}/fleet-inspect.sh" "$@" ;;
+  activate)   exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
+  apply)      exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
+
   # Workflow modes (v0.4)
   sprint)     exec "${BIN_DIR}/sprint.sh" "$@" ;;
   review)     exec "${BIN_DIR}/review-mode.sh" "$@" ;;
