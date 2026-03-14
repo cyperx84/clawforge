@@ -1,347 +1,175 @@
 ---
 name: clawforge
-description: "Multi-mode coding workflow CLI — from quick patches to parallel agent orchestration. Use when: (1) spawning coding agents on tasks (sprint, swarm), (2) reviewing PRs with multi-model review, (3) managing agent lifecycle (steer, attach, stop), (4) monitoring agent health/progress. NOT for: simple one-liner fixes (just edit), reading code (use read tool), or non-git projects."
+description: "Forge and manage fleets of OpenClaw agents. Use when: (1) creating/listing/inspecting agents (create, list, inspect), (2) managing agent lifecycle (bind, activate, deactivate, destroy), (3) sharing agents (export, import), (4) managing templates (template list/show/create), (5) running coding workflows (coding sprint/review/swarm). NOT for: simple one-liner fixes (just edit), reading code (use read tool), or non-git projects."
 metadata:
   {
     "openclaw":
       {
-        "emoji": "🤖",
-        "requires": { "bins": ["clawforge", "jq", "git", "tmux"] },
+        "emoji": "🔨",
+        "requires": { "bins": ["clawforge", "jq"] },
       },
   }
 ---
 
-# ClawForge v1.7 — Multi-Mode Coding Workflow + Fleet Ops
+# ClawForge v2.0 — Fleet Forge for OpenClaw
 
 ## Overview
 
-ClawForge manages coding agents (Claude Code, Codex) running in tmux sessions on isolated git worktrees. Three workflow modes match task complexity:
+ClawForge forges and manages fleets of OpenClaw agents. The primary interface is fleet management: create, configure, bind, and activate agents. Coding workflows (sprint/review/swarm) are available under the `coding` namespace.
 
-- **Sprint** — Single agent, full dev cycle (the workhorse)
-- **Review** — Quality gate on an existing PR (analysis only)
-- **Swarm** — Parallel multi-agent orchestration
+## Fleet Commands (Primary)
 
-Plus management commands: `steer`, `attach`, `stop`, `watch --daemon`, `status`, `dashboard`, observability commands `cost`, `conflicts`, `templates`, fleet ops commands `memory`, `init`, `history`, and clwatch integration `changelog`.
-
-## Quick Start
-
-
-### New in v1.7
+### Create & Inspect
 
 ```bash
-clawforge changelog check           # One-shot: check for tool updates via clwatch
-clawforge changelog check --auto    # Auto-patch reference files without prompt
-clawforge changelog watch           # Daemon: poll every 6h, patch on changes
-clawforge changelog status          # Show known vs current versions
-clawforge changelog ack claude-code # Mark version as reviewed
-clawforge watch --daemon --changelog  # Agent health + changelog in one daemon
+# Interactive agent creation wizard
+clawforge create scout
+
+# From a template/archetype (non-interactive)
+clawforge create scout --from monitor --name Scout --role "External monitoring" --emoji "🔎"
+
+# List all agents with status
+clawforge list
+
+# Deep view of an agent's config, workspace, and bindings
+clawforge inspect builder
+
+# Edit workspace files
+clawforge edit builder --soul
+clawforge edit builder --agents
+clawforge edit builder --tools
+clawforge edit builder --heartbeat
 ```
 
-### New in v0.5
+### Bind & Activate
 
 ```bash
-clawforge dashboard                 # TUI with vim keybindings + ASCII animation
-clawforge cost --summary            # token/cost rollup
-clawforge conflicts                 # overlap/conflict tracking
-clawforge templates                 # built-in/custom workflow templates
-clawforge sprint --template bugfix "Fix auth race" --budget 3.00 --ci-loop
-clawforge swarm --json --notify --webhook https://example.com/hook "Migrate tests"
+# Wire to Discord channel by name
+clawforge bind scout "#scout"
+
+# Wire by channel ID
+clawforge bind scout 1476857455727345818
+
+# Remove binding
+clawforge unbind scout
+
+# Add to OpenClaw config + restart gateway
+clawforge activate scout
+
+# Deactivate (remove from config, keep workspace files)
+clawforge deactivate scout
+
+# Full removal (with confirmation)
+clawforge destroy scout --yes
 ```
 
-### New in v1.5
+### Clone & Export/Import
 
 ```bash
-clawforge deps                     # visualize task dependencies
-clawforge deps --blocked           # only blocked tasks
-clawforge sprint --after 3 "Task" # chain sprint after task #3
-clawforge swarm --after 7 "Task"  # chain swarm after task #7
+# Duplicate an agent
+clawforge clone builder builder-v2
+
+# Package as shareable archive
+clawforge export builder                        # builder.clawforge in cwd
+clawforge export builder --no-user             # skip USER.md (private)
+clawforge export builder --with-memory         # include memory files
+clawforge export builder --output ~/share/builder.clawforge
+
+# Import from file or URL
+clawforge import builder.clawforge
+clawforge import https://example.com/agents/coder.clawforge
+clawforge import coder.clawforge --id my-coder --model anthropic/claude-sonnet-4-6
 ```
 
-### New in v1.4
+### Templates
 
 ```bash
-clawforge web                     # Launch web dashboard (http://localhost:9876)
-clawforge web --port 8080 --open  # Custom port + auto-open browser
+# List all templates (built-in archetypes + user templates)
+clawforge template list
+
+# Preview template content
+clawforge template show coder
+
+# Save an existing agent as a reusable template
+clawforge template create my-monitor --from ops
+
+# Delete a user template (built-ins protected)
+clawforge template delete my-monitor
 ```
 
-### New in v1.3
+Built-in archetypes: `generalist`, `coder`, `monitor`, `researcher`, `communicator`
+
+### Health & Diagnostics
 
 ```bash
-clawforge profile create fast --agent claude --model haiku --timeout 5  # Reusable presets
-clawforge sprint --repo . --task "tests" --after 1                      # Task chaining
-clawforge replay 1                                                      # Re-run task
-clawforge export --format json --save report.json                       # Export history
-clawforge completions zsh                                               # Tab completions
-clawforge config set discord_webhook https://discord.com/api/webhooks/... # Notifications
+# Fleet + system health check
+clawforge doctor
+
+# Fleet-wide model/tool compatibility (requires clwatch)
+clawforge compat
+
+# Tool update check + fleet impact (requires clwatch)
+clawforge upgrade-check
 ```
 
-### New in v1.2
+## clwatch Integration
+
+When clwatch is installed, ClawForge gains compatibility checking, deprecation warnings, and auto-patching:
 
 ```bash
-clawforge config set default_agent claude    # Persistent user config
-clawforge config set auto_clean true         # No more flags every time
-clawforge multi-review --pr 42               # Multi-model PR review
-clawforge summary 1                          # AI summary of agent work
-clawforge parse-cost all --update            # Real cost tracking from output
+# One-shot check for tool updates, auto-patch reference files
+clawforge changelog check --auto
+
+# Daemon mode — polls every 6h
+clawforge changelog watch
+
+# Fleet-wide compatibility report
+clawforge compat
+
+# Check for tool updates with fleet impact
+clawforge upgrade-check
 ```
 
-### New in v1.1
+All clwatch features degrade gracefully — ClawForge works without it.
+
+## Legacy Coding Workflows
+
+Coding workflows are now under the `coding` namespace. Bare forms still work but are deprecated (removed in v3.0).
 
 ```bash
-clawforge resume 1                           # Restart failed task
-clawforge diff 1                             # See changes without attaching
-clawforge pr 1                               # Create PR from task
-```
+# Preferred (v2.0+)
+clawforge coding sprint "Add JWT authentication middleware"
+clawforge coding review --pr 42
+clawforge coding swarm "Migrate all tests from jest to vitest"
+clawforge coding steer 1 "Use bcrypt instead of md5"
+clawforge coding attach 1
+clawforge coding stop 1 --yes
 
-### New in v0.9
-
-```bash
-clawforge logs 1                    # Capture agent output from tmux
-clawforge logs 1 --follow           # Live stream agent output
-clawforge on-complete 1             # Fire webhooks + notify on task finish
-clawforge dashboard                 # p = toggle live preview pane
-```
-
-### New in v0.8
-
-```bash
-clawforge dashboard                 # Views: 1=all, 2=running, 3=finished, Tab=cycle
-                                    # n=nudge running agent
-clawforge doctor                    # Diagnose orphans, stale tasks, disk, branches
-clawforge doctor --fix              # Auto-fix issues
-clawforge sprint --auto-clean --timeout 30 "Task"   # Auto-cleanup + watchdog
-clawforge clean --prune-days 14     # Remove old archived tasks from registry
-clawforge clean --all-done          # Clean + delete merged branches automatically
-```
-
-### New in v0.7
-
-```bash
-clawforge doctor                    # Health check: orphans, stale tasks, disk space
-clawforge doctor --fix              # Auto-remediate issues
-clawforge sprint "Task" --auto-clean --timeout 30  # Cleanup + watchdog
-clawforge clean --prune-days 14     # Prune old archived entries
-```
-
-### New in v0.6
-
-```bash
-clawforge swarm --repos ~/api,~/web "Upgrade auth library"
-clawforge sprint --routing auto "Refactor auth service"
-clawforge memory add "Run prisma generate after schema changes"
-clawforge memory search prisma
-clawforge init --claude-md
-clawforge history --mode swarm --limit 5
-```
-
-### Sprint (single agent)
-
-```bash
-clawforge sprint "Add JWT authentication middleware"
-clawforge sprint ~/github/api "Fix null pointer in UserService" --quick
-clawforge sprint "Add rate limiter" --branch feat/rate-limit --agent codex
-```
-
-### Review (quality gate)
-
-```bash
+# Bare forms (deprecated — will print notice)
+clawforge sprint "Add JWT authentication"
 clawforge review --pr 42
-clawforge review --pr 42 --fix    # Spawn agent to fix issues
+clawforge swarm "Migrate tests"
 ```
 
-### Swarm (parallel agents)
+### Sprint flags
 
-```bash
-clawforge swarm "Migrate all tests from jest to vitest"
-clawforge swarm "Add i18n to all user-facing strings" --max-agents 4
-clawforge swarm --repos ~/api,~/web,~/shared "Upgrade auth v2 to v3"
-```
+- `--quick` — patch mode, auto-merge, skip review
+- `--branch <name>` — override auto-generated branch name
+- `--agent <claude|codex>` — override agent
+- `--model <model>` — override model
+- `--auto-merge` — merge automatically if CI + review pass
 
-### Monitor & Manage
+### Review flags
 
-```bash
-clawforge status                   # Short IDs, mode, status
-clawforge attach 1                 # Attach to agent tmux session
-clawforge steer 1 "Use bcrypt"    # Course-correct running agent
-clawforge stop 1 --yes            # Stop agent
-clawforge watch --daemon           # Background monitoring
-clawforge dashboard                # Full overview + system health
-```
-
-## Workflow Modes
-
-### `clawforge sprint [repo] "<task>" [flags]`
-
-The workhorse. Single agent, full dev cycle.
-
-**Flow:** scope → spawn (1 agent) → [watch] → review → PR → merge → clean → learn
-
-**Flags:**
-- `--quick` — Patch mode: auto-branch, auto-merge, skip review
-- `--branch <name>` — Override auto-generated branch name
-- `--agent <claude|codex>` — Override agent selection
-- `--model <model>` — Override model
-- `--routing <auto|cheap|quality>` — Phase-based model routing
-- `--auto-merge` — Merge automatically if CI + review pass
-- `--dry-run` — Preview what would happen
-
-**Auto-branch naming:** `sprint/<slug>` or `quick/<slug>` (with collision detection)
-
-### `clawforge review [repo] --pr <num> [flags]`
-
-Quality gate on an existing PR. No agent spawned — analysis only.
-
-**Flow:** fetch PR diff → multi-model review → post comments → notify
-
-**Flags:**
 - `--pr <num>` — PR number (required)
-- `--fix` — Escalate: spawn agent to fix issues found
-- `--reviewers <list>` — Override default reviewers (default: claude,gemini)
-- `--dry-run` — Show review without posting comments
+- `--fix` — spawn agent to fix issues found
+- `--reviewers <list>` — reviewer models (default: claude,gemini)
 
-### `clawforge swarm [repo] "<task>" [flags]`
+### Swarm flags
 
-Parallel multi-agent orchestration. Decomposes task, spawns N agents.
-
-**Flow:** scope (decompose) → spawn (N agents) → watch → review (each) → merge → clean → learn
-
-**Flags:**
-- `--max-agents <N>` — Cap parallel agents (default: 3, warns on >3 re: RAM)
-- `--agent <name>` — Force specific agent for all sub-tasks
-- `--repos <paths>` — Multi-repo swarm (comma-separated paths)
-- `--repos-file <file>` — Multi-repo swarm from file
-- `--routing <auto|cheap|quality>` — Phase-based model routing
-- `--auto-merge` — Merge each PR automatically after CI + review
-- `--dry-run` — Show decomposition plan without spawning
-
-**Short IDs:** parent=#3, sub-agents=#3.1, #3.2, #3.3
-
-## Management Commands
-
-### `clawforge status`
-
-Show all tracked tasks with short sequential IDs, mode, and status.
-
-### `clawforge steer <id> "<message>"`
-
-Send course correction to a running agent via tmux. Checks state first — if done, suggests review instead.
-
-```bash
-clawforge steer 1 "Use bcrypt instead of md5"
-clawforge steer 3.2 "Skip legacy migration files"
-```
-
-### `clawforge attach <id>`
-
-Attach to agent's tmux session. For swarm tasks, shows picker.
-
-### `clawforge stop <id> [--yes] [--clean]`
-
-Kill agent, mark as stopped. Prompts for confirmation unless `--yes`. `--clean` removes worktree.
-
-### `clawforge watch [--daemon]`
-
-Monitor all active tasks. Detects dead sessions, checks CI, auto-steers on CI failure.
-
-- Default: one-shot check
-- `--daemon` — Background loop (default: 5 min interval)
-- `--stop` — Stop the daemon
-- `--json` — Machine-readable output
-
-**CI auto-feedback loop:** When CI fails, watch automatically steers the agent with error context (up to 2 retries).
-
-### `clawforge dashboard`
-
-Overview: active tasks (with short IDs + modes), status summary, mode breakdown, system health (RAM estimate, disk usage), conflict warnings.
-
-## Changelog Integration (clwatch)
-
-Track tool changelogs and auto-patch reference files when Claude Code, Codex CLI, etc. release new features.
-
-### `clawforge changelog check`
-
-One-shot check for tool updates. Fetches from changelogs.info via clwatch.
-
-```bash
-clawforge changelog check           # Show what changed, prompt to patch
-clawforge changelog check --auto    # Auto-patch without prompt
-clawforge changelog check --notify  # Send Discord notification on changes
-clawforge changelog check --tools claude-code,codex-cli  # Specific tools only
-```
-
-### `clawforge changelog watch`
-
-Daemon mode — polls for changes on a schedule.
-
-```bash
-clawforge changelog watch              # Poll every 6h
-clawforge changelog watch --interval 1h  # Custom interval (min: 15m)
-clawforge changelog watch --auto --notify  # Hands-free auto-patch + notify
-clawforge changelog watch --stop       # Stop the daemon
-```
-
-### `clawforge changelog status`
-
-Show known vs current versions for all tracked tools.
-
-### `clawforge changelog ack <tool>`
-
-Mark a tool version as reviewed (won't prompt to patch again).
-
-```bash
-clawforge changelog ack claude-code
-```
-
-### Integration with watch daemon
-
-Combine agent health monitoring with changelog checking:
-
-```bash
-clawforge watch --daemon --changelog  # Both in one daemon
-```
-
-### Graceful degradation
-
-Works standalone without clwatch. If not installed, prints install instructions and continues normally.
-
-**Reference file mapping:**
-- `claude-code` → `references/claude-code-features.md`
-- `codex-cli` → `references/codex-cli-features.md`
-- `gemini-cli` → `references/gemini-cli-features.md`
-- `opencode` → `references/opencode-features.md`
-- `openclaw` → `references/openclaw-features.md`
-
-## Direct Module Access
-
-For power users, direct module commands remain available via `clawforge help --all`:
-
-```bash
-clawforge scope --task "..." --prd docs/spec.md
-clawforge spawn --repo ~/github/app --branch feat/x --task "..."
-clawforge notify --type task-done --task-id abc123
-clawforge merge --repo ~/github/app --pr 42 --squash
-clawforge clean --all-done
-clawforge learn --task-id abc123 --auto --memory
-```
-
-## Smart Behaviors
-
-### Auto-Everything
-- **Repo from cwd** — No `--repo` needed if you're already in a git repo
-- **Auto-branch naming** — `sprint/<slug>`, `quick/<slug>`, `swarm/<slug>` with collision detection
-- **Agent auto-detection** — Prefers Claude, falls back to Codex
-
-### Escalation Paths
-- `sprint --quick` → Detects complex task → "Consider full sprint"
-- `sprint` → Multiple file domains → "Try swarm?"
-- `review --fix` → Spawns agent on PR branch
-
-### CI Feedback Loop
-- Watch detects CI failure → fetches error log → auto-steers agent → agent fixes + pushes → up to 2 retries
-
-### Conflict Detection (Swarm)
-- Tracks files modified by each agent
-- Dashboard warns when agents touch overlapping files
+- `--max-agents <N>` — cap parallel agents (default: 3)
+- `--repos <paths>` — multi-repo swarm (comma-separated)
+- `--auto-merge` — merge each PR after CI + review
 
 ## Configuration
 
@@ -349,26 +177,16 @@ clawforge learn --task-id abc123 --auto --memory
 
 ```json
 {
-  "default_agent": "claude",
-  "default_model_claude": "claude-sonnet-4-5",
-  "default_model_codex": "gpt-5.3-codex",
-  "ci_retry_limit": 2,
-  "ram_warn_threshold": 3,
-  "reviewers": ["claude", "gemini"],
-  "auto_simplify": true,
-  "changelog_check_interval": "6h",
-  "changelog_auto_patch": false,
-  "changelog_tools": "claude-code,codex-cli,gemini-cli,opencode,openclaw"
+  "fleet": {
+    "workspace_root": "~/.openclaw/agents",
+    "template_dir": "~/.clawforge/templates",
+    "default_model": "openai-codex/gpt-5.4",
+    "default_archetype": "generalist"
+  },
+  "clwatch": {
+    "auto_check": true,
+    "warn_on_deprecations": true,
+    "compat_check_on_create": true
+  }
 }
 ```
-
-## Tips
-
-- **Use `--dry-run` first** when trying new workflows or unfamiliar repos
-- **Sprint is the default** — use it for most tasks
-- **Quick for patches** — `--quick` auto-merges with no review
-- **Swarm for big refactors** — decomposes and parallelizes
-- **Steer is your course correction** — send messages to running agents
-- **Watch daemon for hands-off** — monitors continuously in background
-- **Dashboard shows everything** — tasks, health, RAM, conflicts
-- **Short IDs everywhere** — `#1`, `3.2` instead of full slugs
