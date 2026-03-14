@@ -56,11 +56,11 @@ Fleet Management:
   migrate       Workspace isolation migration
   apply         Alias for activate
 
-Workflow Modes:
-  quick-run   Direct agent execution in cwd (no branch/worktree overhead)
-  sprint      Single agent, full dev cycle (the workhorse)
-  review      Quality gate on an existing PR (analysis only)
-  swarm       Parallel multi-agent orchestration
+Legacy Coding Workflows (use 'coding' namespace; bare forms deprecated in v3.0):
+  coding sprint   Single agent, full dev cycle
+  coding review   Quality gate on an existing PR
+  coding swarm    Parallel multi-agent orchestration
+  sprint|review|swarm   (bare forms — still work, deprecated)
 
 Management:
   status      Show all tracked tasks with short IDs
@@ -79,6 +79,11 @@ Observability:
   templates   Task template management
   logs        Capture agent output from tmux (without attaching)
   on-complete Fire completion hooks for finished tasks
+
+Sharing:
+  export      Package agent as shareable .clawforge archive
+  import      Import agent from archive (path or URL)
+  template    Manage agent templates (list, show, create, delete)
 
 Fleet Ops:
   memory      Per-repo agent memory (show, add, search, forget, clear)
@@ -238,10 +243,21 @@ case "$COMMAND" in
   compat)       exec "${BIN_DIR}/fleet-compat.sh" "$@" ;;
   upgrade-check) exec "${BIN_DIR}/fleet-upgrade-check.sh" "$@" ;;
 
-  # Workflow modes (v0.4)
-  sprint)     exec "${BIN_DIR}/sprint.sh" "$@" ;;
-  review)     exec "${BIN_DIR}/review-mode.sh" "$@" ;;
-  swarm)      exec "${BIN_DIR}/swarm.sh" "$@" ;;
+  # Fleet sharing (v2.0 Phase 3)
+  fleet-export|export-agent) exec "${BIN_DIR}/fleet-export.sh" "$@" ;;
+  fleet-import|import-agent) exec "${BIN_DIR}/fleet-import.sh" "$@" ;;
+  template)   exec "${BIN_DIR}/template.sh" "$@" ;;
+
+  # Workflow modes (v0.4) — with deprecation notices
+  sprint)
+    echo "Note: Coding workflows are moving to 'clawforge coding sprint'. This shorthand works but will be removed in v3.0." >&2
+    exec "${BIN_DIR}/sprint.sh" "$@" ;;
+  review)
+    echo "Note: Coding workflows are moving to 'clawforge coding review'. This shorthand works but will be removed in v3.0." >&2
+    exec "${BIN_DIR}/review-mode.sh" "$@" ;;
+  swarm)
+    echo "Note: Coding workflows are moving to 'clawforge coding swarm'. This shorthand works but will be removed in v3.0." >&2
+    exec "${BIN_DIR}/swarm.sh" "$@" ;;
 
   # Management commands (v0.4)
   steer)      exec "${BIN_DIR}/steer.sh" "$@" ;;
@@ -282,7 +298,9 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   parse-cost) exec "${BIN_DIR}/parse-cost.sh" "$@" ;;
   profile)    exec "${BIN_DIR}/profile.sh" "$@" ;;
   replay)     exec "${BIN_DIR}/replay.sh" "$@" ;;
-  export)     exec "${BIN_DIR}/export.sh" "$@" ;;
+  export)     exec "${BIN_DIR}/fleet-export.sh" "$@" ;;
+  import)     exec "${BIN_DIR}/fleet-import.sh" "$@" ;;
+  export-history) exec "${BIN_DIR}/export.sh" "$@" ;;
   completions) exec "${BIN_DIR}/completions.sh" "$@" ;;
   web)        exec "${BIN_DIR}/web.sh" "$@" ;;
   deps)       exec "${BIN_DIR}/deps.sh" "$@" ;;
@@ -297,6 +315,23 @@ doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
   merge)      exec "${BIN_DIR}/merge-helper.sh" "$@" ;;
   quick-run)  exec "${BIN_DIR}/quick-run.sh" "$@" ;;
   run)        run_combined "$@" ;;
+
+  # Coding namespace (v2.0 — preferred form)
+  coding)
+    SUB="${1:-help}"
+    shift 2>/dev/null || true
+    case "$SUB" in
+      sprint)  exec "${BIN_DIR}/sprint.sh" "$@" ;;
+      review)  exec "${BIN_DIR}/review-mode.sh" "$@" ;;
+      swarm)   exec "${BIN_DIR}/swarm.sh" "$@" ;;
+      attach)  exec "${BIN_DIR}/attach.sh" "$@" ;;
+      steer)   exec "${BIN_DIR}/steer.sh" "$@" ;;
+      stop)    exec "${BIN_DIR}/stop.sh" "$@" ;;
+      *)
+        echo "Unknown coding command: $SUB" >&2
+        echo "Available: sprint, review, swarm, attach, steer, stop" >&2
+        exit 1 ;;
+    esac ;;
 
   # Meta
   version|-v|--version) show_version ;;
