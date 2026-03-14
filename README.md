@@ -307,6 +307,48 @@ Edit `config/defaults.json`:
 ./tests/run-all-tests.sh
 ```
 
-## License
+## Changelog Integration (v1.7+)
 
-MIT
+Track tool changes via clwatch and auto-patch reference files when tool capabilities change. Works standalone without clwatch — ClawForge works standalone. When clwatch is installed.
+
+**Install clwatch:**
+
+```bash
+brew install cyperx84/tap/clwatch
+```
+
+**Run manually:**
+```bash
+clawforge changelog check
+clawforge changelog status
+clawforge changelog ack <tool> <version>  # Mark as reviewed
+```
+
+## Changelog
+
+| Tool | clwatch | Version |
+|-------|---------------|-------------------|
+| claude-code | 2.1.76 | ✓ | ✓ (verified) | **codex-cli** | 0.114.0 | ✓ | ✓ (verified) |
+gemini-cli    0.33.1   ✓ | ✓ (verified)
+opencode       1.2.26    ✓ | ✓(verified)
+openclaw    2026.3.12  ✓ | ✓(verified)
+
+```
+
+**Changelog workflow:**
+- **Check:** one-shot check for tool updates ( `clawforge changelog check --auto`
+- **watch:** Daemon mode with `--interval 6h` (default)
+- **status:** Show known vs current versions for all tools
+- **ack:** Mark a tool version as reviewed
+- **Run it manually when needed:**
+```bash
+clawforge changelog check
+clawforge changelog status
+clawforge changelog ack <tool> <version>
+# mark as reviewed
+```
+
+## Related
+- [Clwatch CLI](https://github.com/cyperx84/clwatch) — consume these payloads
+- [changelogs.dev/workflows](https://changelogs.dev/workflows) — workflow guides for multi-tool dev patterns
+
