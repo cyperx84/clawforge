@@ -1,6 +1,6 @@
 {
   "name": "@cyperx/clawforge",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "description": "Multi-mode coding workflow CLI for orchestrating AI coding agents",
   "bin": {
     "clawforge": "./bin/clawforge",
