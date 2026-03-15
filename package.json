@@ -1,6 +1,6 @@
 {
   "name": "@cyperx/clawforge",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Forge and manage fleets of OpenClaw agents",
   "bin": {
     "clawforge": "./bin/clawforge",
