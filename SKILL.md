@@ -1,6 +1,6 @@
 ---
 name: clawforge
-description: "Forge and manage fleets of OpenClaw agents. Use when: (1) creating/listing/inspecting agents (create, list, inspect), (2) managing agent lifecycle (bind, activate, deactivate, destroy), (3) sharing agents (export, import), (4) managing templates (template list/show/create), (5) running coding workflows (coding sprint/review/swarm). NOT for: simple one-liner fixes (just edit), reading code (use read tool), or non-git projects."
+description: "Forge and manage fleets of OpenClaw agents. Use when: (1) creating/listing/inspecting agents (create, list, inspect), (2) managing agent lifecycle (bind, activate, deactivate, destroy), (3) sharing agents (export, import), (4) managing templates (template list/show/create), (5) fleet observability (status, cost, logs). NOT for: simple one-liner fixes (just edit), reading code (use read tool)."
 metadata:
   {
     "openclaw":
@@ -11,13 +11,13 @@ metadata:
   }
 ---
 
-# ClawForge v2.0 — Fleet Forge for OpenClaw
+# ClawForge v2.1 — Fleet Forge for OpenClaw
 
 ## Overview
 
-ClawForge forges and manages fleets of OpenClaw agents. The primary interface is fleet management: create, configure, bind, and activate agents. Coding workflows (sprint/review/swarm) are available under the `coding` namespace.
+ClawForge forges and manages fleets of OpenClaw agents. Create, configure, bind, and monitor your agent fleet.
 
-## Fleet Commands (Primary)
+## Fleet Commands
 
 ### Create & Inspect
 
@@ -132,44 +132,24 @@ clawforge upgrade-check
 
 All clwatch features degrade gracefully — ClawForge works without it.
 
-## Legacy Coding Workflows
-
-Coding workflows are now under the `coding` namespace. Bare forms still work but are deprecated (removed in v3.0).
+## Fleet Observability
 
 ```bash
-# Preferred (v2.0+)
-clawforge coding sprint "Add JWT authentication middleware"
-clawforge coding review --pr 42
-clawforge coding swarm "Migrate all tests from jest to vitest"
-clawforge coding steer 1 "Use bcrypt instead of md5"
-clawforge coding attach 1
-clawforge coding stop 1 --yes
+# Fleet-wide status dashboard
+clawforge status
 
-# Bare forms (deprecated — will print notice)
-clawforge sprint "Add JWT authentication"
-clawforge review --pr 42
-clawforge swarm "Migrate tests"
+# Single agent status
+clawforge status builder
+
+# Cost tracking
+clawforge cost
+clawforge cost builder --today
+
+# View agent logs
+clawforge logs builder
+clawforge logs builder --follow
+clawforge logs builder --tail 100
 ```
-
-### Sprint flags
-
-- `--quick` — patch mode, auto-merge, skip review
-- `--branch <name>` — override auto-generated branch name
-- `--agent <claude|codex>` — override agent
-- `--model <model>` — override model
-- `--auto-merge` — merge automatically if CI + review pass
-
-### Review flags
-
-- `--pr <num>` — PR number (required)
-- `--fix` — spawn agent to fix issues found
-- `--reviewers <list>` — reviewer models (default: claude,gemini)
-
-### Swarm flags
-
-- `--max-agents <N>` — cap parallel agents (default: 3)
-- `--repos <paths>` — multi-repo swarm (comma-separated)
-- `--auto-merge` — merge each PR after CI + review
 
 ## Configuration
 

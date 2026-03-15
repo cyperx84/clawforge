@@ -54,47 +54,17 @@ Options:
 | Source | `git pull && ./install.sh` |
 
 ## Prerequisites
-- bash, jq, git, tmux
-- gh CLI (authenticated via `gh auth login`)
+- bash, jq, git
 - OpenClaw (for fleet management)
-- At least one AI agent: `claude` and/or `codex` (for coding workflows)
 
 ## Verify
 ```bash
-clawforge version    # Should show current version (e.g., v2.0.0)
+clawforge version    # Should show current version (e.g., v2.1.0)
 clawforge help       # Full command list
 clawforge doctor     # Check system health
 ```
 
-## Coding Workflow Quick Start
-
-Orchestrate coding agents (Claude Code, Codex) with sprint/review/swarm modes:
-
-```bash
-# Navigate to any git repo
-cd ~/my-project
-
-# Sprint — single agent, full dev cycle
-clawforge sprint "Add JWT authentication"
-clawforge sprint "Fix typo" --quick    # Auto-merge, skip review
-
-# Review — quality gate on existing PR
-clawforge review --pr 42
-
-# Swarm — parallel multi-agent
-clawforge swarm "Migrate tests to vitest" --max-agents 4
-
-# Monitor
-clawforge status
-clawforge dashboard
-
-# Manage running agents
-clawforge attach 1           # Attach to agent's tmux session
-clawforge steer 1 "Use bcrypt"  # Course-correct
-clawforge stop 1 --yes       # Kill agent
-```
-
-## Fleet Management Quick Start
+## Quick Start
 
 Create and manage OpenClaw agent fleets:
 
@@ -113,6 +83,22 @@ clawforge activate builder
 
 # View fleet
 clawforge list
+clawforge status
+```
+
+## Fleet Observability
+
+```bash
+# Fleet-wide status
+clawforge status
+
+# Cost tracking
+clawforge cost
+clawforge cost --today
+
+# View agent logs
+clawforge logs builder
+clawforge logs builder --follow
 ```
 
 ## Changelog Tracking (clwatch Integration)
@@ -144,7 +130,7 @@ This creates the skill at `~/.openclaw/skills/clawforge/` and adds `clawforge` t
 
 ## Learn More
 
-- [Workflow Modes](./workflow-modes.md) — sprint, review, swarm
 - [Fleet Management](./fleet-management.md) — Agent fleet workflow
 - [Archetypes](./archetypes.md) — Agent templates
+- [Custom Archetypes](./custom-archetypes.md) — Create your own
 - [Command Reference](./command-reference.md) — All commands

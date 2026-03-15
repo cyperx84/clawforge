@@ -1,32 +1,20 @@
 # ClawForge Documentation
 
-**ClawForge is a multi-mode coding workflow CLI + agent fleet forge.** Two core capabilities:
-
-1. **Coding Workflows** — Sprint, review, swarm modes for orchestrating Claude Code and Codex
-2. **Fleet Management** — Create, manage, and orchestrate fleets of specialized OpenClaw agents
-
-## Coding Workflows
-
-- [Workflow Modes](./workflow-modes.md) — sprint, review, swarm
-- [Getting Started](./getting-started.md) — Quick start guide
-- [Scenario Playbooks](./scenarios.md) — Common patterns
-- [Dashboard (Go TUI)](./dashboard.md) — Live monitoring
-- [Architecture](./architecture.md) — System design
+**ClawForge is a fleet forge for OpenClaw.** Create, manage, and monitor fleets of specialized AI agents.
 
 ## Fleet Management
 
+- [Getting Started](./getting-started.md) — Quick start guide
 - [Fleet Management](./fleet-management.md) — How agent fleets work
-- [Archetypes](./archetypes.md) — Built-in and custom templates
-- [clwatch Integration](./clwatch-integration.md) — Changelog tracking
+- [Archetypes](./archetypes.md) — Built-in agent templates
+- [Custom Archetypes](./custom-archetypes.md) — Create your own templates
 - [Command Reference](./command-reference.md) — Full command documentation
+- [API Reference](./api-reference.md) — Programmatic access
 
-## Operations
+## Configuration
 
-- [Fleet Ops](./fleet-ops.md) — Memory, init, history
-- [Evaluation Loop](./evaluation.md) — Task evaluation
 - [Configuration](./configuration.md) — Config management
-- [Troubleshooting](./troubleshooting.md) — Common issues
-- [FAQ](./faq.md) — Frequently asked questions
+- [clwatch Integration](./clwatch-integration.md) — Changelog tracking
 
 ## Release & Publishing
 
@@ -35,10 +23,7 @@
 
 ## Version History
 
+- v2.1: Stripped to fleet essentials, added fleet-status/cost/logs
+- v2.0: Fleet Forge pivot — agent creation and management
 - v1.7: clwatch integration (changelog tracking)
-- v1.6: quick-run, npm binary downloads
-- v1.5: dependency graph, task chaining
-- v1.4: web dashboard
-- v1.3: developer experience (profiles, replay, export, completions)
-- v1.2: power features (config, multi-model review, summary)
-- v1.0: milestone release
+- v1.0: Initial release with coding workflows
