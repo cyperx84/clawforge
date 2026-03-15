@@ -53,115 +53,44 @@ Fleet Management:
   activate      Add agent to config and restart gateway
   deactivate    Remove agent from config (keep files)
   destroy       Full removal of agent (requires --yes)
-  migrate       Workspace isolation migration
   apply         Alias for activate
 
-Legacy Coding Workflows (use 'coding' namespace; bare forms deprecated in v3.0):
-  coding sprint   Single agent, full dev cycle
-  coding review   Quality gate on an existing PR
-  coding swarm    Parallel multi-agent orchestration
-  sprint|review|swarm   (bare forms — still work, deprecated)
-
-Management:
-  status      Show all tracked tasks with short IDs
-  resume      Resume a failed/timeout task from where it left off
-  diff        Show git diff for a task without attaching
-  pr          Create a PR from a task branch
-  attach      Attach to a running agent's tmux session
-  steer       Send course correction to a running agent
-  stop        Stop a running agent
-  watch       Monitor agent health (supports --daemon)
-  dashboard   Live TUI dashboard with vim keybindings
-
-Observability:
-  cost        Token/cost tracking and budget management
-  conflicts   Swarm conflict detection and resolution
-  templates   Task template management
-  logs        Capture agent output from tmux (without attaching)
-  on-complete Fire completion hooks for finished tasks
-
-Sharing:
-  export      Package agent as shareable .clawforge archive
-  import      Import agent from archive (path or URL)
+Fleet Observability:
+  status      Fleet-aware status dashboard
+  cost        Aggregate token/cost tracking across fleet
+  logs        View agent conversation logs
   template    Manage agent templates (list, show, create, delete)
-
-Fleet Ops:
-  memory      Per-repo agent memory (show, add, search, forget, clear)
-  init        Scan project and generate initial memory entries
-  history     Show completed task history
-
-Reliability:
-  doctor      Diagnose orphaned sessions, dangling worktrees, stale tasks
-
-Power Features:
   config      Manage user configuration (~/.clawforge/config.json)
-  multi-review Run PR through multiple models and compare feedback
-  summary     AI-generated summary of what an agent did
-  parse-cost  Parse real cost/token data from agent output
-
-Web Dashboard:
-  web         Launch web dashboard (accessible from phone/browser)
-  deps        Show task dependency graph / blocked tasks
 
 Tool Integration:
   changelog      Track and auto-patch reference files from tool changelogs (via clwatch)
   compat         Fleet-wide model/tool compatibility check (via clwatch)
   upgrade-check  Check for tool updates and affected agents (via clwatch)
 
+Reliability:
+  doctor      Diagnose issues and verify fleet health
+
 Developer Experience:
-  profile     Manage reusable agent profiles (presets)
-  replay      Re-run a completed task with same parameters
-  export      Export task history as markdown/JSON report
   completions Install shell tab completions (bash/zsh/fish)
-
-Evaluation:
-  eval        Run-eval logging and weekly summaries
-
-Lifecycle:
-  clean       Clean up completed tasks
-  learn       Record learnings from completed tasks
 EOF
-
-  if $show_all; then
-    cat <<EOF
-
-Direct Module Access:
-  scope       Assemble a prompt with context (Module 1)
-  spawn       Create worktree + launch coding agent (Module 2)
-  notify      Send Discord notification (Module 6)
-  merge       Merge helper with safety checks (Module 7)
-  run         Scope + spawn in one step (legacy shortcut)
-EOF
-  fi
 
   cat <<EOF
 
 Meta:
-  help        Show this help (use --all for direct module commands)
+  help        Show this help
   version     Show version
 
 Global flags:
   --verbose   Enable debug logging
 
 Examples:
-  clawforge sprint "Add JWT authentication middleware"
-  clawforge sprint "Fix typo in readme" --quick
-  clawforge sprint --template refactor "Refactor auth module"
-  clawforge review --pr 42
-  clawforge swarm "Migrate all tests from jest to vitest"
-  clawforge swarm --template migration "Migrate to TypeScript" --ci-loop
-  clawforge swarm --repos ~/api,~/web,~/shared "Upgrade auth library"
-  clawforge sprint --routing auto "Refactor auth service"
-  clawforge steer 1 "Use bcrypt instead of md5"
-  clawforge dashboard
-  clawforge cost --summary
-  clawforge memory show
-  clawforge memory add "Always run tests first"
-  clawforge init
-  clawforge history --repo api
-  clawforge eval log --command sprint --mode quick --repo api --status ok --duration-ms 420000
-  clawforge eval weekly
-  clawforge templates
+  clawforge create builder              # Create a new agent
+  clawforge list                        # Show all agents
+  clawforge status                      # Fleet status
+  clawforge cost                        # View fleet costs
+  clawforge logs builder                # View agent logs
+  clawforge inspect builder             # Deep dive on an agent
+  clawforge bind builder --channel code # Wire to Discord channel
 EOF
 }
 
@@ -227,7 +156,7 @@ COMMAND="${1:-help}"
 shift 2>/dev/null || true
 
 case "$COMMAND" in
-  # Fleet management (v2.0)
+  # Fleet management (v2.0+)
   create)       exec "${BIN_DIR}/fleet-create.sh" "$@" ;;
   list)         exec "${BIN_DIR}/fleet-list.sh" "$@" ;;
   inspect)      exec "${BIN_DIR}/fleet-inspect.sh" "$@" ;;
@@ -238,100 +167,23 @@ case "$COMMAND" in
   activate)     exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
   deactivate)   exec "${BIN_DIR}/fleet-deactivate.sh" "$@" ;;
   destroy)      exec "${BIN_DIR}/fleet-destroy.sh" "$@" ;;
-  migrate)      exec "${BIN_DIR}/fleet-migrate.sh" "$@" ;;
   apply)        exec "${BIN_DIR}/fleet-activate.sh" "$@" ;;
   compat)       exec "${BIN_DIR}/fleet-compat.sh" "$@" ;;
   upgrade-check) exec "${BIN_DIR}/fleet-upgrade-check.sh" "$@" ;;
 
-  # Fleet sharing (v2.0 Phase 3)
-  fleet-export|export-agent) exec "${BIN_DIR}/fleet-export.sh" "$@" ;;
-  fleet-import|import-agent) exec "${BIN_DIR}/fleet-import.sh" "$@" ;;
-  template)   exec "${BIN_DIR}/template.sh" "$@" ;;
+  # Fleet sharing
+  export|export-agent|fleet-export)  exec "${BIN_DIR}/fleet-export.sh" "$@" ;;
+  import|import-agent|fleet-import)  exec "${BIN_DIR}/fleet-import.sh" "$@" ;;
+  template)     exec "${BIN_DIR}/template.sh" "$@" ;;
 
-  # Workflow modes (v0.4) — with deprecation notices
-  sprint)
-    echo "Note: Coding workflows are moving to 'clawforge coding sprint'. This shorthand works but will be removed in v3.0." >&2
-    exec "${BIN_DIR}/sprint.sh" "$@" ;;
-  review)
-    echo "Note: Coding workflows are moving to 'clawforge coding review'. This shorthand works but will be removed in v3.0." >&2
-    exec "${BIN_DIR}/review-mode.sh" "$@" ;;
-  swarm)
-    echo "Note: Coding workflows are moving to 'clawforge coding swarm'. This shorthand works but will be removed in v3.0." >&2
-    exec "${BIN_DIR}/swarm.sh" "$@" ;;
-
-  # Management commands (v0.4)
-  steer)      exec "${BIN_DIR}/steer.sh" "$@" ;;
-  attach)     exec "${BIN_DIR}/attach.sh" "$@" ;;
-  stop)       exec "${BIN_DIR}/stop.sh" "$@" ;;
-
-  # Existing commands
-  status)     show_status "$@" ;;
-  watch)      exec "${BIN_DIR}/check-agents.sh" "$@" ;;
-  dashboard)
-    # Prefer Go TUI binary if available, fallback to dashboard.sh
-    if [[ -x "${BIN_DIR}/clawforge-dashboard" ]]; then
-      exec "${BIN_DIR}/clawforge-dashboard" "$@"
-    else
-      exec "${BIN_DIR}/dashboard.sh" "$@"
-    fi
-    ;;
-  clean)      exec "${BIN_DIR}/clean.sh" "$@" ;;
-  learn)      exec "${BIN_DIR}/learn.sh" "$@" ;;
-
-  # v0.5 observability + intelligence
-  cost)       exec "${BIN_DIR}/cost.sh" "$@" ;;
-  conflicts)  exec "${BIN_DIR}/conflicts.sh" "$@" ;;
-  templates)  exec "${BIN_DIR}/templates.sh" "$@" ;;
-
-  # v0.6 fleet operations
-  memory)     exec "${BIN_DIR}/memory.sh" "$@" ;;
-  init)       exec "${BIN_DIR}/init.sh" "$@" ;;
-  history)    exec "${BIN_DIR}/history.sh" "$@" ;;
-  eval)       exec "${BIN_DIR}/eval.sh" "$@" ;;
-doctor)     exec "${BIN_DIR}/doctor.sh" "$@" ;;
-  resume)     exec "${BIN_DIR}/resume.sh" "$@" ;;
-  diff)       exec "${BIN_DIR}/diff.sh" "$@" ;;
-  pr)         exec "${BIN_DIR}/pr.sh" "$@" ;;
-  config)     exec "${BIN_DIR}/config.sh" "$@" ;;
-  multi-review) exec "${BIN_DIR}/multi-review.sh" "$@" ;;
-  summary)    exec "${BIN_DIR}/summary.sh" "$@" ;;
-  parse-cost) exec "${BIN_DIR}/parse-cost.sh" "$@" ;;
-  profile)    exec "${BIN_DIR}/profile.sh" "$@" ;;
-  replay)     exec "${BIN_DIR}/replay.sh" "$@" ;;
-  export)     exec "${BIN_DIR}/fleet-export.sh" "$@" ;;
-  import)     exec "${BIN_DIR}/fleet-import.sh" "$@" ;;
-  export-history) exec "${BIN_DIR}/export.sh" "$@" ;;
-  completions) exec "${BIN_DIR}/completions.sh" "$@" ;;
-  web)        exec "${BIN_DIR}/web.sh" "$@" ;;
-  deps)       exec "${BIN_DIR}/deps.sh" "$@" ;;
-  logs)       exec "${BIN_DIR}/logs.sh" "$@" ;;
-  on-complete) exec "${BIN_DIR}/on-complete.sh" "$@" ;;
-  changelog)  exec "${BIN_DIR}/changelog.sh" "$@" ;;
-
-  # Direct module access (hidden from main help)
-  scope)      exec "${BIN_DIR}/scope-task.sh" "$@" ;;
-  spawn)      exec "${BIN_DIR}/spawn-agent.sh" "$@" ;;
-  notify)     exec "${BIN_DIR}/notify.sh" "$@" ;;
-  merge)      exec "${BIN_DIR}/merge-helper.sh" "$@" ;;
-  quick-run)  exec "${BIN_DIR}/quick-run.sh" "$@" ;;
-  run)        run_combined "$@" ;;
-
-  # Coding namespace (v2.0 — preferred form)
-  coding)
-    SUB="${1:-help}"
-    shift 2>/dev/null || true
-    case "$SUB" in
-      sprint)  exec "${BIN_DIR}/sprint.sh" "$@" ;;
-      review)  exec "${BIN_DIR}/review-mode.sh" "$@" ;;
-      swarm)   exec "${BIN_DIR}/swarm.sh" "$@" ;;
-      attach)  exec "${BIN_DIR}/attach.sh" "$@" ;;
-      steer)   exec "${BIN_DIR}/steer.sh" "$@" ;;
-      stop)    exec "${BIN_DIR}/stop.sh" "$@" ;;
-      *)
-        echo "Unknown coding command: $SUB" >&2
-        echo "Available: sprint, review, swarm, attach, steer, stop" >&2
-        exit 1 ;;
-    esac ;;
+  # Fleet observability (v2.1)
+  status)       exec "${BIN_DIR}/fleet-status.sh" "$@" ;;
+  cost)         exec "${BIN_DIR}/fleet-cost.sh" "$@" ;;
+  logs)         exec "${BIN_DIR}/fleet-logs.sh" "$@" ;;
+  config)       exec "${BIN_DIR}/config.sh" "$@" ;;
+  doctor)       exec "${BIN_DIR}/doctor.sh" "$@" ;;
+  changelog)    exec "${BIN_DIR}/changelog.sh" "$@" ;;
+  completions)  exec "${BIN_DIR}/completions.sh" "$@" ;;
 
   # Meta
   version|-v|--version) show_version ;;

@@ -1,15 +1,21 @@
 # Command Reference
 
-## Fleet Commands
+ClawForge v2.1 commands for fleet management and observability.
+
+---
+
+## Fleet Management
 
 ### create
 Interactive agent creation wizard.
+
 ```bash
 clawforge create
 clawforge create --from coder --name builder --role "Coding specialist" --emoji 🔧
 clawforge create --from generalist --name myagent --channel "#general"
 ```
-Flags:
+
+**Flags:**
 - `--from` — Archetype template (generalist, coder, monitor, researcher, communicator)
 - `--name` — Agent name
 - `--role` — Role description
@@ -18,377 +24,347 @@ Flags:
 - `--channel` — Discord channel to bind
 - `--dry-run` — Preview without creating
 
+---
+
 ### list
 Fleet overview with status indicators.
+
 ```bash
-clawforge list
-clawforge list --json
+clawforge list              # All agents
+clawforge list --verbose    # Include fallbacks, heartbeat, subagent perms
+clawforge list --json       # Machine-readable output
 ```
+
+---
 
 ### inspect
 Deep view of agent DNA — config, workspace, and bindings.
+
 ```bash
 clawforge inspect builder
 clawforge inspect builder --json
 ```
 
+---
+
 ### edit
 Open agent workspace files in `$EDITOR`.
+
 ```bash
-clawforge edit builder
-clawforge edit builder soul       # Edit SOUL.md specifically
+clawforge edit builder              # Interactive menu
+clawforge edit builder soul         # Edit SOUL.md specifically
+clawforge edit builder agents
+clawforge edit builder tools
+clawforge edit builder identity
+clawforge edit builder heartbeat
 ```
+
+---
 
 ### bind
 Wire agent to a Discord channel.
+
 ```bash
 clawforge bind builder "#builder"
 clawforge bind builder 1234567890
 ```
 
+---
+
 ### unbind
 Remove channel binding from an agent.
+
 ```bash
 clawforge unbind builder
 ```
 
+---
+
 ### clone
 Duplicate an agent with all its configuration.
+
 ```bash
 clawforge clone builder builder-v2
 ```
 
+---
+
 ### activate
-Add agent to OpenClaw config and restart.
+Add agent to OpenClaw config and restart gateway.
+
 ```bash
 clawforge activate builder
 clawforge activate builder --no-restart
 ```
 
+---
+
 ### deactivate
-Remove agent from active config (agent still exists).
+Remove agent from active config (agent files still exist).
+
 ```bash
 clawforge deactivate builder
 ```
 
+---
+
 ### destroy
 Full agent removal with safety guards.
+
 ```bash
 clawforge destroy builder --yes
 clawforge destroy builder --yes --keep-workspace
 ```
 
-### migrate
-Migrate agent to isolated workspace.
-```bash
-clawforge migrate builder
-clawforge migrate --all
-```
+---
 
-### export (agent)
-Package an agent as a `.clawforge` archive.
-```bash
-clawforge export builder
-clawforge export builder --output ~/backups/builder.clawforge
-```
+### apply
+Alias for `activate`.
 
-### import
-Import an agent from a `.clawforge` archive.
 ```bash
-clawforge import builder.clawforge
-clawforge import builder.clawforge --name builder-copy
-```
-
-### template
-Manage agent archetypes.
-```bash
-clawforge template list
-clawforge template show coder
-clawforge template create my-template
-clawforge template delete my-template
-```
-
-### compat
-Fleet-wide model/tool compatibility check (requires clwatch).
-```bash
-clawforge compat
-clawforge compat --json
-```
-
-### upgrade-check
-Tool upgrade recommendations (requires clwatch).
-```bash
-clawforge upgrade-check
-clawforge upgrade-check --json
-```
-
-### sprint
-Run a single agent through a full coding cycle.
-```bash
-clawforge sprint "Fix auth bug"
-clawforge sprint "Add feature" --quick
-```
-
-### review
-Quality gate on an existing PR.
-```bash
-clawforge review --pr 42
-clawforge review --pr 42 --fix
-```
-
-### swarm
-Orchestrate multiple agents in parallel.
-```bash
-clawforge swarm "Implement auth system"
-clawforge swarm "Implement auth system" --max-agents 4
+clawforge apply builder
 ```
 
 ---
 
-## Management
+## Export & Import
+
+### export (agent)
+Package an agent as a `.clawforge` archive for sharing.
+
+```bash
+clawforge export builder                              # Create builder.clawforge
+clawforge export builder --output ~/backups/builder.clawforge
+clawforge export builder --with-memory                # Include memory files
+clawforge export builder --no-user                    # Exclude USER.md
+```
+
+---
+
+### import
+Import an agent from a `.clawforge` archive.
+
+```bash
+clawforge import builder.clawforge
+clawforge import builder.clawforge --name builder-copy
+clawforge import https://example.com/releases/coder.clawforge  # From URL
+```
+
+---
+
+## Archetype Management
+
+### template
+Manage agent archetypes (templates).
+
+```bash
+clawforge template list                 # List all templates
+clawforge template show coder           # Preview archetype
+clawforge template create my-template   # Save current agent as template
+clawforge template delete my-template   # Remove user template
+```
+
+User templates live in `~/.clawforge/templates/`.
+Built-in archetypes live in `config/archetypes/` in the install directory.
+
+---
+
+## Fleet Observability
 
 ### status
-Show tracked tasks.
+Fleet-aware status dashboard showing agent health and activity.
+
 ```bash
-clawforge status
+clawforge status                   # All agents
+clawforge status builder           # Single agent
+clawforge status --json            # Machine-readable output
 ```
 
-### attach
-Attach to tmux session for a running task.
-```bash
-clawforge attach 1
-clawforge attach 3.2
-```
+**Output columns:**
+- ID — Agent identifier
+- Name — Agent name
+- Model — Primary model
+- Channel — Discord/Telegram binding
+- Status — ● active, ○ created, ◌ config-only
+- Memory — Lines in workspace memory/
+- Activity — Last activity indicator
 
-### steer
-Send instruction to running task.
-```bash
-clawforge steer 1 "Use bcrypt instead of md5"
-```
-
-### stop
-Stop running task.
-```bash
-clawforge stop 1 --yes
-```
-
-### watch
-Health monitor and optional daemon mode.
-```bash
-clawforge watch --daemon
-```
-
-### dashboard
-Live Go TUI dashboard.
-```bash
-clawforge dashboard
-clawforge dashboard --no-anim
-```
-
-## Observability
+---
 
 ### cost
+Aggregate token/cost tracking across fleet.
+
 ```bash
-clawforge cost --summary
-clawforge cost <task-id>
-clawforge cost --capture <id>
+clawforge cost                      # Fleet-wide summary
+clawforge cost builder              # Single agent
+clawforge cost --today              # Today's costs only
+clawforge cost --week               # This week's costs
+clawforge cost --json               # Machine-readable output
 ```
 
-### conflicts
+**Output columns:**
+- ID — Agent identifier
+- Name — Agent name
+- Input Tokens — Tokens consumed as input
+- Output Tokens — Tokens generated as output
+- Cost — Total cost in USD
+
+---
+
+### logs
+View agent conversation logs.
+
 ```bash
-clawforge conflicts
-clawforge conflicts --check
-clawforge conflicts --resolve
+clawforge logs builder              # Last 50 lines
+clawforge logs builder --tail 100   # Last 100 lines
+clawforge logs builder --follow     # Stream logs (tail -f style, Ctrl+C to stop)
+clawforge logs builder --json       # Machine-readable output
 ```
 
-### templates
-```bash
-clawforge templates
-clawforge templates show migration
-clawforge templates new my-template
-```
+Reads from:
+- OpenClaw session logs if available
+- Agent workspace logs
+- Agent transcript files
 
-## Fleet Ops
+---
 
-### memory
-```bash
-clawforge memory
-clawforge memory show
-clawforge memory add "Run prisma generate after schema changes"
-clawforge memory search prisma
-clawforge memory forget --id <id>
-clawforge memory clear
-```
+## System Health
 
-### init
-```bash
-clawforge init
-clawforge init --claude-md
-```
+### doctor
+Diagnose fleet and system health.
 
-### history
 ```bash
-clawforge history
-clawforge history --mode swarm --limit 5
-clawforge history --repo api
-```
-
-### eval (v0.6.2)
-```bash
-clawforge eval log --command sprint --mode quick --repo api --status ok --duration-ms 420000
-clawforge eval weekly
-clawforge eval compare --week-a 2026-09 --week-b 2026-10
-clawforge eval paths
-```
-
-### doctor (v0.7)
-```bash
-clawforge doctor                    # Diagnose orphans, stale tasks, disk, branches
-clawforge doctor --fix              # Auto-fix issues found
+clawforge doctor                    # Full diagnostics
+clawforge doctor --fix              # Auto-fix detected issues
 clawforge doctor --json             # Structured output
 ```
 
-### logs (v0.9)
+**Checks:**
+- Agent workspace integrity (required files present)
+- Config validity (JSON parsing)
+- Gateway connectivity
+- Tool versions (if clwatch installed)
+- Orphaned workspaces and stale symlinks
+- Memory/storage usage
+
+---
+
+## Tool Integration
+
+### compat
+Fleet-wide model/tool compatibility check (requires clwatch).
+
 ```bash
-clawforge logs 1                    # Last 50 lines from agent tmux pane
-clawforge logs 1 --lines 100       # More context
-clawforge logs 1 --follow           # Live stream (Ctrl+C to stop)
-clawforge logs 1 --save /tmp/out.log  # Dump to file
-clawforge logs 1 --raw              # Keep ANSI escape codes
+clawforge compat                    # Check all agents
+clawforge compat --json             # Machine-readable output
 ```
 
-### on-complete (v0.9)
+**Requires:** `clwatch` installed and running
+
+---
+
+### upgrade-check
+Tool update recommendations and fleet impact (requires clwatch).
+
 ```bash
-clawforge on-complete 1             # Fire completion hooks for task #1
-clawforge on-complete 1 --dry-run   # Preview what would fire
+clawforge upgrade-check             # Check for updates
+clawforge upgrade-check --json      # Machine-readable output
 ```
 
-### clean (enhanced v0.7)
+**Requires:** `clwatch` installed and running
+
+---
+
+### changelog
+Track and auto-patch reference files from tool changelogs.
+
 ```bash
-clawforge clean --task-id <id>      # Clean specific task
-clawforge clean --all-done          # Clean all done tasks
-clawforge clean --stale-days 7      # Clean old tasks
-clawforge clean --prune-days 14     # Remove archived entries from registry
-clawforge clean --all-done --keep-branch  # Skip branch deletion
+clawforge changelog check           # Check for updated changelogs
+clawforge changelog check --auto    # Auto-patch agent references
+clawforge changelog watch           # Daemon: poll every 6 hours
 ```
 
-### Workflow flags (v0.7+)
+---
+
+## Configuration
+
+### config
+Manage ClawForge user configuration.
+
 ```bash
-clawforge sprint "Task" --auto-clean          # Auto-cleanup on finish
-clawforge sprint "Task" --timeout 30          # Kill agent after 30 minutes
-clawforge swarm "Task" --auto-clean --timeout 60  # Both on swarm
+clawforge config show               # Display current config
+clawforge config get key            # Get single value
+clawforge config set key value      # Set value
+clawforge config unset key          # Remove key
+clawforge config init               # Create default config
+clawforge config path               # Show config file location
+clawforge config edit               # Edit in $EDITOR
 ```
 
-### Dashboard keybindings (v0.8+)
-```
-1/2/3      View: all / running / finished
-Tab        Cycle views
-n          Nudge selected running agent
-p          Toggle output preview pane
-j/k        Navigate
-Enter      Attach to tmux session
-s          Steer agent
-x          Stop agent (with confirm)
-/          Filter
-r          Force refresh
-?          Help overlay
-q          Quit
-```
+Config file: `~/.clawforge/config.json`
 
-### config (v1.2)
+---
+
+## Shell Integration
+
+### completions
+Install shell tab completions.
+
 ```bash
-clawforge config show                          # Show all config
-clawforge config get default_agent             # Get single value
-clawforge config set default_agent claude      # Set value
-clawforge config set auto_clean true           # Enable auto-clean by default
-clawforge config set default_timeout 30        # 30-min timeout by default
-clawforge config set review_models "claude-sonnet-4-5,gpt-5.2-codex,claude-opus-4"
-clawforge config unset default_timeout         # Remove a key
-clawforge config init                          # Create default config
-clawforge config path                          # Show config file location
+clawforge completions bash          # Install bash completions
+clawforge completions zsh           # Install zsh completions
+clawforge completions fish          # Install fish completions
 ```
 
-### multi-review (v1.2)
+---
+
+## Meta
+
+### help
+Show help and usage.
+
 ```bash
-clawforge multi-review --pr 42                                    # Review with default models
-clawforge multi-review --pr 42 --models "sonnet,opus,codex"       # Custom model list
-clawforge multi-review --pr 42 --output /tmp/reviews              # Save reviews
-clawforge multi-review --pr 42 --diff-only                        # Show disagreements only
-clawforge multi-review --pr 42 --json                             # JSON output
-clawforge multi-review --pr 42 --dry-run                          # Preview
+clawforge help                      # General help
+clawforge help <command>            # Help for specific command
+clawforge --help
 ```
 
-### summary (v1.2)
+---
+
+### version
+Show ClawForge version.
+
 ```bash
-clawforge summary 1                           # Markdown summary of what agent did
-clawforge summary 1 --format json             # JSON output
-clawforge summary 1 --format text             # Plain text
-clawforge summary 1 --include-diff            # Include diff stats
-clawforge summary 1 --save /tmp/summary.md    # Save to file
-clawforge summary 1 --model claude-opus-4     # Use specific model
+clawforge version
+clawforge --version
+clawforge -v
 ```
 
-### parse-cost (v1.2)
+---
+
+## Global Flags
+
+- `--verbose` — Enable debug logging on any command
+
 ```bash
-clawforge parse-cost 1                        # Parse cost from agent output
-clawforge parse-cost all                      # Parse all running agents
-clawforge parse-cost all --update             # Parse + write to costs.jsonl
-clawforge parse-cost 1 --json                 # JSON output
-clawforge parse-cost 1 --lines 500            # Scan more output lines
+clawforge list --verbose
+clawforge status --verbose
 ```
 
-### profile (v1.3)
-```bash
-clawforge profile list                                           # List all profiles
-clawforge profile create fast --agent claude --model haiku --timeout 5  # Create profile
-clawforge profile show fast                                      # Show profile details
-clawforge profile use fast                                       # Print spawn flags
-clawforge profile delete fast                                    # Delete profile
-clawforge sprint --repo . --task "fix" $(clawforge profile use fast)    # Use in sprint
-```
+---
 
-### replay (v1.3)
-```bash
-clawforge replay 1                           # Replay task #1
-clawforge replay 1 --model claude-opus-4     # Replay with different model
-clawforge replay 1 --dry-run                 # Preview
-```
+## Exit Status
 
-### export (v1.3)
-```bash
-clawforge export                             # Full markdown report
-clawforge export --format json               # JSON dump
-clawforge export --status done --save report.md  # Filtered + saved
-clawforge export --since 2026-03-01          # Date range
-```
+- `0` — Success
+- `1` — General error (missing required flag, invalid input, etc.)
+- `2` — Command-specific error (agent not found, config invalid, etc.)
 
-### completions (v1.3)
-```bash
-clawforge completions bash                   # Install bash completions
-clawforge completions zsh                    # Install zsh completions
-clawforge completions fish                   # Install fish completions
-```
+---
 
-### Task Dependencies (v1.3)
-```bash
-clawforge sprint --repo . --task "run tests" --after 1   # Run after task #1 completes
-```
+## Environment Variables
 
-### web (v1.4)
-```bash
-clawforge web                     # Start on http://localhost:9876
-clawforge web --port 8080         # Custom port
-clawforge web --open              # Start + open browser
-clawforge web --build             # Force rebuild binary
-```
-
-### deps (v1.5)
-```bash
-clawforge deps                # show dependency graph
-clawforge deps --blocked      # only blocked tasks
-clawforge deps --json         # machine-readable graph
-
-# task chaining
-clawforge sprint --after 3 "Run regression tests"
-clawforge swarm --after 7 "Cutover migration"
-```
+- `CLAWFORGE_DEBUG` — Enable debug logging (set by `--verbose` flag)
+- `OPENCLAW_CONFIG` — Path to openclaw.json (default: `~/.openclaw/openclaw.json`)
+- `OPENCLAW_AGENTS_DIR` — Path to agents directory (default: `~/.openclaw/agents`)
+- `OPENCLAW_WORKSPACE` — Legacy workspace directory (default: `~/.openclaw/workspace`)
+- `CLAWFORGE_HOME` — User configuration directory (default: `~/.clawforge`)

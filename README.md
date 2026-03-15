@@ -11,7 +11,7 @@
 
 **Forge and manage fleets of OpenClaw agents.**
 
-Build agents, shape their identity, wire them to channels, deploy fleets — then run coding workflows or anything else.
+ClawForge v2.1 is a fleet-focused agent manager. Build agents, shape their identity, wire them to channels, deploy fleets — and monitor fleet health.
 
 ---
 
@@ -29,13 +29,14 @@ clawforge activate scout
 
 # Check your fleet
 clawforge list
+clawforge status
 ```
 
 ---
 
-## Fleet Commands
+## Fleet Management
 
-The primary interface. Everything starts here.
+Core fleet commands for creating, configuring, and deploying agents.
 
 | Command | Description |
 |---------|-------------|
@@ -43,7 +44,7 @@ The primary interface. Everything starts here.
 | `clawforge create <id> --from <archetype>` | Create from template (non-interactive) |
 | `clawforge list` | Fleet overview — all agents with status |
 | `clawforge inspect <id>` | Deep view: config, workspace, bindings |
-| `clawforge edit <id> --soul\|--agents\|--tools\|--heartbeat` | Edit workspace files |
+| `clawforge edit <id>` | Edit agent workspace files in $EDITOR |
 | `clawforge bind <id> <channel>` | Wire agent to Discord/Telegram/etc |
 | `clawforge unbind <id>` | Remove channel binding |
 | `clawforge clone <source> <new-id>` | Duplicate an agent |
@@ -52,11 +53,7 @@ The primary interface. Everything starts here.
 | `clawforge destroy <id>` | Full removal (requires `--yes`) |
 | `clawforge export <id>` | Package as shareable `.clawforge` archive |
 | `clawforge import <path\|url>` | Import from archive |
-| `clawforge migrate` | Workspace isolation migration |
 | `clawforge apply` | Alias for activate |
-| `clawforge doctor` | Fleet + system health check |
-| `clawforge compat` | Fleet-wide model/tool compatibility (via clwatch) |
-| `clawforge upgrade-check` | Tool update recommendations (via clwatch) |
 
 ### `clawforge list` — Fleet Overview
 
@@ -94,6 +91,53 @@ The primary interface. Everything starts here.
 
 ---
 
+## Fleet Observability
+
+Monitor fleet health, costs, and agent activity.
+
+| Command | Description |
+|---------|-------------|
+| `clawforge status` | Fleet-aware status dashboard |
+| `clawforge status <id>` | Status for a single agent |
+| `clawforge cost` | Aggregate token/cost tracking across fleet |
+| `clawforge cost <id>` | Costs for a single agent |
+| `clawforge cost --today` | Today's costs only |
+| `clawforge logs <id>` | View agent conversation logs |
+| `clawforge logs <id> --follow` | Stream logs (tail -f style) |
+| `clawforge logs <id> --tail 100` | Last 100 lines |
+
+### `clawforge status` — Fleet Dashboard
+
+```
+🔨 ClawForge Fleet — 4 agents
+
+ ID          Name        Model              Channel      Status    Memory  Activity
+ ───────────────────────────────────────────────────────────────────────────────────
+ main        Claw        gpt-5.4            #claw        ● active   42      active
+ builder     Builder     gpt-5.4            #builder     ● active   156     active
+ researcher  Researcher  gpt-5.4            #researcher  ● active   89      —
+ scout       Scout       gpt-5.4            —            ○ created  0       —
+
+ ● = active  ○ = created  ◌ = config-only
+```
+
+### `clawforge cost` — Cost Aggregation
+
+```
+🔨 ClawForge Fleet Costs (all)
+
+ ID          Name        Input Tokens  Output Tokens  Cost
+ ─────────────────────────────────────────────────────────────
+ main        Claw        145000        82500          $2.34
+ builder     Builder     98000         45200          $1.21
+ researcher  Researcher  201000        156800         $4.12
+ scout       Scout       12000         8500           $0.28
+
+ TOTAL                    456000        293000         $7.95
+```
+
+---
+
 ## Templates & Archetypes
 
 ClawForge ships five built-in archetypes. Use them as starting points:
@@ -123,7 +167,7 @@ clawforge template list
 clawforge template delete my-coder-v2
 ```
 
-User templates live at `~/.clawforge/templates/`.  
+User templates live at `~/.clawforge/templates/`.
 Built-in archetypes live at `config/archetypes/` in the ClawForge install dir.
 
 ---
@@ -139,9 +183,6 @@ clawforge export builder
 
 # Include memory files
 clawforge export builder --with-memory
-
-# Skip USER.md (private info)
-clawforge export builder --no-user
 
 # Custom output path
 clawforge export builder --output ~/share/builder-v2.clawforge
@@ -192,14 +233,6 @@ clawforge changelog check --auto
 clawforge changelog watch             # daemon: polls every 6h
 ```
 
-```
-Fleet Compatibility Report
-────────────────────────────────────
- Agent       Model        Harness Compat    Deprecations
- main        gpt-5.4      codex ✓           none
- builder     gpt-5.4      codex ✓ claude ✓  none
-```
-
 ClawForge works fully without clwatch. Install it to add compatibility checking, deprecation warnings, and auto-patching.
 
 ```bash
@@ -208,34 +241,21 @@ brew install cyperx84/tap/clwatch
 
 ---
 
-## Coding Workflows
+## System Health
 
-ClawForge provides three primary coding workflow modes for orchestrating AI agents.
+Diagnose and maintain fleet infrastructure.
 
 ```bash
-# Sprint — single agent, full dev cycle
-clawforge sprint "Add JWT authentication"
-clawforge sprint "Fix typo" --quick    # Auto-merge, skip review
+# Full system + fleet health check
+clawforge doctor
 
-# Review — quality gate on existing PR
-clawforge review --pr 42
-
-# Swarm — parallel multi-agent orchestration
-clawforge swarm "Migrate tests to vitest" --max-agents 4
+# Output includes:
+# - Agent workspace status (workspace files, memory, heartbeat)
+# - Gateway connectivity
+# - OpenClaw config validation
+# - Tool versions (if clwatch installed)
+# - Orphaned workspaces/stale symlinks
 ```
-
-### Quick reference
-
-| Command | Description | Key Flags |
-|---------|-------------|-----------|
-| `sprint` | Single agent, full dev cycle | `--quick`, `--branch`, `--agent`, `--auto-merge` |
-| `review` | Quality gate on PR (analysis only) | `--pr`, `--fix`, `--reviewers` |
-| `swarm` | Parallel multi-agent orchestration | `--max-agents`, `--repos`, `--auto-merge` |
-| `steer` | Course-correct a running agent | (task ID, message) |
-| `attach` | Attach to agent's tmux session | (task ID) |
-| `stop` | Stop a running agent | `--yes`, `--clean` |
-
-Full docs: [`docs/workflow-modes.md`](./docs/workflow-modes.md)
 
 ---
 
@@ -297,68 +317,46 @@ mkdir -p ~/.local/bin
 ln -sf "$(pwd)/bin/clawforge" ~/.local/bin/clawforge
 
 # Optional OpenClaw skill wiring
-mkdir -p ~/.openclaw/skills/clawforge/scripts
-ln -sf "$(pwd)/SKILL.md" ~/.openclaw/skills/clawforge/SKILL.md
-ln -sf "$(pwd)/bin/clawforge" ~/.openclaw/skills/clawforge/scripts/clawforge
+mkdir -p ~/.claude/skills/clawforge
+ln -sf "$(pwd)/SKILL.md" ~/.claude/skills/clawforge/SKILL.md
 ```
-
-### Prerequisites
-
-- `bash` 4+, `jq`, `git`, `tmux`
-- `gh` (GitHub CLI, authenticated) — for coding workflow commands
-- `claude` and/or `codex` CLI — for coding workflow commands
 
 ---
 
 ## Configuration
 
-`config/defaults.json`:
+ClawForge uses two main configuration files:
 
-```json
-{
-  "fleet": {
-    "workspace_root": "~/.openclaw/agents",
-    "template_dir": "~/.clawforge/templates",
-    "default_model": "openai-codex/gpt-5.4",
-    "default_archetype": "generalist"
-  },
-  "clwatch": {
-    "auto_check": true,
-    "warn_on_deprecations": true,
-    "compat_check_on_create": true
-  },
-  "default_agent": "claude",
-  "default_model_claude": "claude-sonnet-4-5",
-  "default_model_codex": "gpt-5.3-codex",
-  "ci_retry_limit": 2
-}
+- **`~/.openclaw/openclaw.json`** — Agent list, models, bindings (managed by ClawForge)
+- **`~/.clawforge/config.json`** — User preferences, defaults, and customization
+
+Inspect/edit config:
+
+```bash
+clawforge config show        # Display current config
+clawforge config edit        # Edit in $EDITOR
+clawforge config set <key> <value>
 ```
 
 ---
 
 ## Documentation
 
-Full docs in [`docs/`](./docs/README.md):
-
-- [Fleet Management](./docs/fleet-management.md)
-- [Archetypes Reference](./docs/archetypes.md)
-- [clwatch Integration](./docs/clwatch-integration.md)
-- [Coding Workflows](./docs/workflow-modes.md)
-- [Migration Guide](./docs/migration-guide.md)
-- [Command Reference](./docs/command-reference.md)
-- [Dashboard (Go TUI)](./docs/dashboard.md)
-- [Architecture](./docs/architecture.md)
-- [Configuration](./docs/configuration.md)
-- [Troubleshooting](./docs/troubleshooting.md)
-- [Changelog](./CHANGELOG.md)
+- **`docs/command-reference.md`** — Detailed command documentation
+- **`docs/README.md`** — Architecture and design decisions
+- **`CHANGELOG.md`** — Release notes and version history
 
 ---
 
-## Testing
+## Support
 
-```bash
-./tests/run-all-tests.sh
+For bugs, feature requests, or questions:
 
-# Phase 3 specific
-./tests/test-fleet-phase3.sh
-```
+- GitHub: [cyperx84/clawforge](https://github.com/cyperx84/clawforge)
+- Issues: [github.com/cyperx84/clawforge/issues](https://github.com/cyperx84/clawforge/issues)
+
+---
+
+## License
+
+MIT

@@ -1,5 +1,38 @@
 # Changelog
 
+## v2.1.0 — Fleet Essentials
+
+**ClawForge stripped to fleet-focused core. Coding workflows delegated to individual agents.**
+
+### Removed (Legacy Coding Workflows)
+- Removed `sprint`, `review`, `swarm` commands (use coding agents directly)
+- Removed TUI and web dashboards (not fleet-aware)
+- Removed task lifecycle commands: `attach`, `steer`, `stop`, `resume`, `replay`, `clean`
+- Removed legacy memory system: `memory`, `init`, `history`, `learn`
+- Removed PR/CI commands: `pr`, `merge-helper`, `multi-review`, `on-complete`
+- Removed observability: `conflicts`, `diff`, `summary`, `eval`, `deps`, `parse-cost`
+- Removed model routing: `routing.sh`
+- Removed watch daemon: `check-agents.sh`
+- Removed task templates system: `templates.sh` (keep `template.sh` for archetypes)
+
+### New (Fleet Observability)
+- `fleet-status.sh` — Fleet-aware status dashboard with memory/activity tracking
+- `fleet-cost.sh` — Aggregate token/cost tracking across fleet
+- `fleet-logs.sh` — View agent conversation logs with follow mode
+
+### Changed
+- `status` now routes to `fleet-status.sh` (fleet-focused, not legacy task registry)
+- `cost` now routes to `fleet-cost.sh` (fleet-wide aggregation)
+- `logs` now routes to `fleet-logs.sh` (agent conversation logs)
+- Removed example commands from help text (legacy sprint/review/swarm examples removed)
+- Help text rewritten for fleet essentials only
+- README.md rewritten to focus on fleet management
+
+### Unchanged
+- All fleet management commands work as before: `create`, `list`, `inspect`, `edit`, `bind`, etc.
+- `template`, `config`, `doctor`, `changelog`, `completions` continue to work
+- Tool integration: `compat`, `upgrade-check`, `changelog`
+
 ## v2.0.1
 
 _Release notes pending._
