@@ -1,49 +1,28 @@
-# ClawForge Evaluation Scorecard
+# ClawForge Fleet Scorecard
 
-Use this weekly to evaluate whether ClawForge is actually improving delivery.
+Weekly health check for your agent fleet.
 
-## Weekly KPI Table
+## Fleet Health (weekly)
 
-| Week | Lead Time (idea→merge, hrs) | PRs Shipped | Run Success % | Rework % (reopen/revert) | Incidents Post-Merge | Median Run Time (min) | p95 Run Time (min) | Human Time Saved (hrs) | UX Score (1–5) | Notes / Regressions |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| YYYY-WW |  |  |  |  |  |  |  |  |  |  |
+| Week | Agents Active | Agents Created | Agents Destroyed | Channel Issues | Model Errors | Notes |
+|------|:---:|:---:|:---:|:---:|:---:|------|
+| YYYY-WW | | | | | | |
 
-## Command Reliability (weekly)
+## Agent Reliability
 
-| Command | Runs | Success % | Timeout % | Retry Rate % | Median Duration | p95 Duration | Notes |
-|---|---:|---:|---:|---:|---:|---:|---|
-| sprint |  |  |  |  |  |  |  |
-| swarm |  |  |  |  |  |  |  |
-| review |  |  |  |  |  |  |  |
-| dashboard |  |  |  |  |  |  |  |
-| memory/init/history |  |  |  |  |  |  |  |
+| Agent | Uptime % | Errors/Week | Channel Health | Model | Notes |
+|-------|:---:|:---:|:---:|:---:|------|
+| main | | | | | |
+| builder | | | | | |
 
-## Gold-Path Scenarios (repeat each week)
+## Gold-Path Checks (run weekly)
 
-1. **Small fix**: `clawforge sprint --quick`
-2. **Medium feature**: `clawforge sprint --routing auto`
-3. **Cross-repo migration**: `clawforge swarm --repos ...`
+1. `clawforge list` — fleet overview renders correctly
+2. `clawforge status` — all active agents show health
+3. `clawforge doctor` — no critical issues
+4. `clawforge create test-agent --from generalist --no-interactive` — agent creation works
+5. `clawforge destroy test-agent --yes` — cleanup works
 
-Track for each scenario:
-- pass/fail
-- elapsed time
-- manual interventions needed
-- quality outcome (review comments / test failures)
+## Notes
 
-## UX Rubric (1–5)
-
-- Discoverability (commands obvious?)
-- Recovery (errors actionable?)
-- Predictability (same behavior each run?)
-- Control (easy steer/stop/override?)
-- Cognitive load (how much user has to remember?)
-
-Overall UX Score = average of 5 items.
-
-## Weekly Review Prompt (20 min)
-
-1. What improved this week?
-2. What regressed this week?
-3. Which one bottleneck should we fix next?
-4. Which command generated the most babysitting?
-5. One concrete change for next week.
+Track issues, regressions, or observations here.

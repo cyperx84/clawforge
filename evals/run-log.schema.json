@@ -1,44 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://clawforge.local/schemas/run-log.schema.json",
-  "title": "ClawForge Run Log Entry",
+  "$id": "https://clawforge.local/schemas/fleet-event.schema.json",
+  "title": "ClawForge Fleet Event",
   "type": "object",
-  "required": [
-    "ts",
-    "runId",
-    "command",
-    "mode",
-    "repo",
-    "status",
-    "durationMs",
-    "retries",
-    "costUsd",
-    "manualInterventions",
-    "qualityOutcome"
-  ],
+  "required": ["ts", "event", "agentId"],
   "properties": {
-    "ts": { "type": "string", "format": "date-time" },
-    "runId": { "type": "string" },
-    "command": { "type": "string", "enum": ["sprint", "swarm", "review", "dashboard", "memory", "init", "history"] },
-    "mode": { "type": "string" },
-    "repo": { "type": "string" },
-    "task": { "type": "string" },
-    "status": { "type": "string", "enum": ["ok", "error", "timeout", "cancelled"] },
-    "durationMs": { "type": "integer", "minimum": 0 },
-    "retries": { "type": "integer", "minimum": 0 },
-    "costUsd": { "type": "number", "minimum": 0 },
-    "manualInterventions": { "type": "integer", "minimum": 0 },
-    "qualityOutcome": {
-      "type": "object",
-      "required": ["testsPassed", "reviewComments", "reopened", "reverted"],
-      "properties": {
-        "testsPassed": { "type": "boolean" },
-        "reviewComments": { "type": "integer", "minimum": 0 },
-        "reopened": { "type": "boolean" },
-        "reverted": { "type": "boolean" }
-      }
-    },
-    "notes": { "type": "string" }
-  },
-  "additionalProperties": true
+    "ts":        { "type": "string", "format": "date-time" },
+    "event":     { "type": "string", "enum": ["created", "activated", "deactivated", "destroyed", "bound", "unbound", "cloned", "exported", "imported", "error"] },
+    "agentId":   { "type": "string" },
+    "agentName": { "type": "string" },
+    "model":     { "type": "string" },
+    "channel":   { "type": "string" },
+    "notes":     { "type": "string" }
+  }
 }

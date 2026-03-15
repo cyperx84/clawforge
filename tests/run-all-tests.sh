@@ -5,26 +5,48 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "╔══════════════════════════════════════╗"
-echo "║       clawforge test suite            ║"
+echo "║       ClawForge Test Suite           ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
 
 TOTAL_PASS=0
 TOTAL_FAIL=0
-TESTS=(test-cli test-registry test-spawn test-watch test-review test-scope test-notify test-merge test-clean test-learn test-foundation test-modes test-management test-dashboard test-tui test-cost test-templates test-conflicts test-ci-loop test-openclaw test-multi-repo test-routing test-memory test-init test-history test-eval test-reliability test-observability test-practical test-power test-dx test-web test-deps test-quick-run)
+
+TESTS=(
+  test-foundation
+  test-cli
+  test-fleet-common
+  test-fleet-create
+  test-fleet-list
+  test-fleet-inspect
+  test-fleet-status
+  test-fleet-cost
+  test-fleet-logs
+  test-fleet-config-safety
+  test-fleet-e2e
+  test-fleet-all
+  test-fleet-phase2
+  test-fleet-phase3
+)
 
 for test in "${TESTS[@]}"; do
   echo "────────────────────────────────────────"
-  if "$SCRIPT_DIR/${test}.sh"; then
-    echo "  → ${test}: PASS"
+  if [[ -f "$SCRIPT_DIR/${test}.sh" ]]; then
+    if "$SCRIPT_DIR/${test}.sh"; then
+      echo "  → ${test}: PASS"
+      TOTAL_PASS=$((TOTAL_PASS + 1))
+    else
+      echo "  → ${test}: FAIL"
+      TOTAL_FAIL=$((TOTAL_FAIL + 1))
+    fi
   else
-    echo "  → ${test}: FAIL"
-    TOTAL_FAIL=$((TOTAL_FAIL + 1))
+    echo "  → ${test}: SKIP (not found)"
   fi
   echo ""
 done
 
 echo "════════════════════════════════════════"
+echo "Passed: $TOTAL_PASS  Failed: $TOTAL_FAIL"
 if [[ $TOTAL_FAIL -eq 0 ]]; then
   echo "All test suites passed ✅"
   exit 0
