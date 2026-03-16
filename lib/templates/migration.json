@@ -1,7 +1,0 @@
-{
-  "mode": "swarm",
-  "maxAgents": 4,
-  "autoMerge": true,
-  "ciLoop": true,
-  "description": "Large-scale migration: parallel agents with auto-merge and CI feedback"
-}

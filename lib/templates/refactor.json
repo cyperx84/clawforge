@@ -1,6 +1,0 @@
-{
-  "mode": "sprint",
-  "autoMerge": false,
-  "ciLoop": true,
-  "description": "Code refactoring: single agent with CI loop, manual merge for safety"
-}

@@ -1,5 +1,29 @@
 # Changelog
 
+## v3.0.0 — Go Rewrite
+
+**ClawForge rewritten as a single Go binary with Bubble Tea TUI.**
+
+### Added
+- Single compiled Go binary — zero runtime dependencies
+- Bubble Tea TUI (`clawforge tui`) with fleet overview, agent detail, cost dashboard
+- Filesystem-based agent discovery (`~/.openclaw/agents/`)
+- 18 unit tests across config, fleet, workspace, and TUI packages
+- goreleaser config for cross-platform builds (macOS/Linux/Windows, amd64/arm64)
+- Improved `doctor` command with fleet health summary
+
+### Removed
+- All bash scripts (`bin/*.sh`)
+- `lib/` shell library
+- `tui/` Go TUI (replaced with bubbletea)
+- `web/` dashboard
+- `registry/`, `tests/`, `evals/` directories
+
+### Migration
+No config migration needed. ClawForge v3 reads the same `~/.openclaw/` structure.
+
+---
+
 ## v2.1.0 — Fleet Essentials
 
 **ClawForge stripped to fleet-focused core. Coding workflows delegated to individual agents.**
