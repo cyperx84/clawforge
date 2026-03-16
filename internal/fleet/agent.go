@@ -174,25 +174,25 @@ func indexOf(s, substr string) int {
 	return -1
 }
 
-// CreateAgent creates a new agent in the config
+// CreateAgent creates a new agent via the openclaw CLI (safe config writes)
 func CreateAgent(agent *config.Agent) error {
-	cfg, err := config.ReadOpenClawConfig()
-	if err != nil {
-		return err
-	}
-
-	// Check for duplicate
-	for _, a := range cfg.Agents.List {
-		if a.ID == agent.ID {
-			return fmt.Errorf("agent already exists: %s", agent.ID)
+	// Resolve model to string for CLI
+	model := ""
+	switch v := agent.Model.(type) {
+	case string:
+		model = v
+	case map[string]interface{}:
+		if p, ok := v["primary"].(string); ok {
+			model = p
 		}
 	}
 
-	cfg.Agents.List = append(cfg.Agents.List, *agent)
-	return config.WriteOpenClawConfig(cfg)
+	return OpenClawAgentAdd(agent.ID, agent.Name, model, agent.Workspace)
 }
 
-// UpdateAgent updates an agent in the config
+// UpdateAgent updates an agent in the config via config.patch
+// Uses the safe JSON-preserving write since openclaw CLI doesn't have
+// a direct "update agent fields" command yet.
 func UpdateAgent(agent *config.Agent) error {
 	cfg, err := config.ReadOpenClawConfig()
 	if err != nil {
@@ -214,36 +214,9 @@ func UpdateAgent(agent *config.Agent) error {
 	return config.WriteOpenClawConfig(cfg)
 }
 
-// DeleteAgent removes an agent from the config
+// DeleteAgent removes an agent via the openclaw CLI (safe config writes)
 func DeleteAgent(id string) error {
-	cfg, err := config.ReadOpenClawConfig()
-	if err != nil {
-		return err
-	}
-
-	idx := -1
-	for i, a := range cfg.Agents.List {
-		if a.ID == id {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return fmt.Errorf("agent not found: %s", id)
-	}
-
-	cfg.Agents.List = append(cfg.Agents.List[:idx], cfg.Agents.List[idx+1:]...)
-
-	// Remove bindings
-	newBindings := []config.Binding{}
-	for _, b := range cfg.Bindings {
-		if b.AgentID != id {
-			newBindings = append(newBindings, b)
-		}
-	}
-	cfg.Bindings = newBindings
-
-	return config.WriteOpenClawConfig(cfg)
+	return OpenClawAgentDelete(id)
 }
 
 // GetWorkspacePath returns the workspace path for an agent without circular dependency

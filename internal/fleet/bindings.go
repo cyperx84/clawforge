@@ -6,7 +6,7 @@ import (
 	"github.com/cyperx84/clawforge/internal/config"
 )
 
-// GetBindings returns all bindings for an agent
+// GetBindings returns all bindings for an agent (read-only, safe)
 func GetBindings(id string) ([]config.Binding, error) {
 	cfg, err := config.ReadOpenClawConfig()
 	if err != nil {
@@ -22,14 +22,14 @@ func GetBindings(id string) ([]config.Binding, error) {
 	return bindings, nil
 }
 
-// AddBinding adds a new binding for an agent
-func AddBinding(agentID string, binding config.Binding) error {
+// AddBinding adds a new binding for an agent via the openclaw CLI
+func AddBinding(agentID string, channel string) error {
+	// Verify agent exists first
 	cfg, err := config.ReadOpenClawConfig()
 	if err != nil {
 		return err
 	}
 
-	// Check agent exists
 	found := false
 	for _, a := range cfg.Agents.List {
 		if a.ID == agentID {
@@ -41,56 +41,22 @@ func AddBinding(agentID string, binding config.Binding) error {
 		return fmt.Errorf("agent not found: %s", agentID)
 	}
 
-	binding.AgentID = agentID
-	cfg.Bindings = append(cfg.Bindings, binding)
-	return config.WriteOpenClawConfig(cfg)
+	return OpenClawAgentBind(agentID, channel)
 }
 
-// RemoveBinding removes a binding for an agent
+// RemoveBinding removes bindings for an agent via the openclaw CLI
 func RemoveBinding(agentID string) error {
-	cfg, err := config.ReadOpenClawConfig()
-	if err != nil {
-		return err
-	}
-
-	newBindings := []config.Binding{}
-	removed := false
-	for _, b := range cfg.Bindings {
-		if b.AgentID != agentID {
-			newBindings = append(newBindings, b)
-		} else {
-			removed = true
-		}
-	}
-
-	if !removed {
-		return fmt.Errorf("no binding found for agent: %s", agentID)
-	}
-
-	cfg.Bindings = newBindings
-	return config.WriteOpenClawConfig(cfg)
+	return OpenClawAgentUnbind(agentID)
 }
 
-// BindDiscord binds an agent to a Discord channel
+// BindDiscord binds an agent to a Discord channel via the openclaw CLI
 func BindDiscord(agentID, channelID, serverID string) error {
-	binding := config.Binding{
-		AgentID: agentID,
-		Discord: &config.Discord{
-			ChannelID: channelID,
-			ServerID:  serverID,
-		},
-	}
-	return AddBinding(agentID, binding)
+	// openclaw agents bind --agent <id> --bind discord
+	// The openclaw CLI handles channel resolution
+	return OpenClawAgentBind(agentID, "discord")
 }
 
-// BindSlack binds an agent to a Slack channel
+// BindSlack binds an agent to a Slack channel via the openclaw CLI
 func BindSlack(agentID, channelID, workspaceID string) error {
-	binding := config.Binding{
-		AgentID: agentID,
-		Slack: &config.Slack{
-			ChannelID:   channelID,
-			WorkspaceID: workspaceID,
-		},
-	}
-	return AddBinding(agentID, binding)
+	return OpenClawAgentBind(agentID, "slack")
 }

@@ -110,15 +110,10 @@ func DetectDriftWithPaths(agentsDir string, cfg *config.OpenClawConfig) (*SyncRe
 	return result, nil
 }
 
-// FixDrift adds disk-only agents to the config
+// FixDrift adds disk-only agents to the config via the openclaw CLI
 func FixDrift(result *SyncResult) (int, error) {
 	if len(result.DiskOnly) == 0 {
 		return 0, nil
-	}
-
-	cfg, err := config.ReadOpenClawConfig()
-	if err != nil {
-		return 0, err
 	}
 
 	agentsDir, err := config.AgentsDir()
@@ -136,19 +131,12 @@ func FixDrift(result *SyncResult) (int, error) {
 			}
 		}
 
-		agent := config.Agent{
-			ID:        id,
-			Name:      name,
-			Workspace: wsPath,
-			Model:     cfg.Agents.Defaults.Model,
+		if err := OpenClawAgentAdd(id, name, "", wsPath); err != nil {
+			return added, fmt.Errorf("failed to add agent %s: %w", id, err)
 		}
-		cfg.Agents.List = append(cfg.Agents.List, agent)
 		added++
 	}
 
-	if err := config.WriteOpenClawConfig(cfg); err != nil {
-		return 0, err
-	}
 	return added, nil
 }
 

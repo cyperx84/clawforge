@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -27,11 +28,11 @@ var createCmd = &cobra.Command{
 		id := args[0]
 
 		// Create agent config
+		// Agent config only includes fields OpenClaw recognizes
+		// Role/Emoji go in workspace files, not config
 		agent := &config.Agent{
 			ID:    id,
 			Name:  agentName,
-			Role:  agentRole,
-			Emoji: agentEmoji,
 			Model: agentModel,
 		}
 
@@ -154,11 +155,19 @@ var inspectCmd = &cobra.Command{
 		if len(agent.Bindings) > 0 {
 			fmt.Println("\nBindings:")
 			for _, b := range agent.Bindings {
-				if b.Discord != nil {
-					fmt.Printf("  Discord: #%s\n", b.Discord.ChannelID)
-				}
-				if b.Slack != nil {
-					fmt.Printf("  Slack: #%s\n", b.Slack.ChannelID)
+				if matchRaw, ok := b.Extra["match"]; ok {
+					var match map[string]interface{}
+					if err := json.Unmarshal(matchRaw, &match); err == nil {
+						channel, _ := match["channel"].(string)
+						if peer, ok := match["peer"].(map[string]interface{}); ok {
+							peerID, _ := peer["id"].(string)
+							fmt.Printf("  %s: #%s\n", channel, peerID)
+						} else {
+							fmt.Printf("  %s binding\n", channel)
+						}
+					}
+				} else {
+					fmt.Printf("  %s\n", b.AgentID)
 				}
 			}
 		}
