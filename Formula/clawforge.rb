@@ -3,7 +3,6 @@ class Clawforge < Formula
   homepage "https://github.com/cyperx84/clawforge"
   url "https://github.com/cyperx84/clawforge/archive/refs/tags/v3.1.0.tar.gz"
   sha256 "93a6890113541a2a973a1eed873c9eea0aa4d9fa33c978e52b29cbe34bde8841"
-  sha256 "PLACEHOLDER"
   license "MIT"
   head "https://github.com/cyperx84/clawforge.git", branch: "main"
 
