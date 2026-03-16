@@ -1,30 +1,23 @@
 class Clawforge < Formula
   desc "Forge and manage fleets of OpenClaw agents"
   homepage "https://github.com/cyperx84/clawforge"
-  url "https://github.com/cyperx84/clawforge/archive/refs/tags/v3.0.0.tar.gz"
-  sha256 "bf80b71dd06f4d8e9c877be7c93d87d1f163c5b33f51df44c93719dda6399189"
-  sha256 "8a330d297211cd2a5543b73d959046673c8ee0ec9870eff4bffd8fcf50706c5d"
+  url "https://github.com/cyperx84/clawforge/archive/refs/tags/v3.1.0.tar.gz"
+  sha256 "PLACEHOLDER"
   license "MIT"
   head "https://github.com/cyperx84/clawforge.git", branch: "main"
 
-  depends_on "jq"
+  depends_on "go" => :build
 
   def install
-    libexec.install Dir["bin/*"]
-    libexec.install Dir["lib"]
-    libexec.install Dir["config"]
-    libexec.install "VERSION"
-    libexec.install "registry"
-
-    (bin/"clawforge").write <<~EOS
-      #!/bin/bash
-      export CLAWFORGE_DIR="#{libexec}"
-      exec "#{libexec}/clawforge" "$@"
-    EOS
+    ldflags = %W[
+      -s -w
+      -X github.com/cyperx84/clawforge/cmd.Version=#{version}
+    ]
+    system "go", "build", *std_go_args(ldflags: ldflags), "."
   end
 
   test do
-    assert_match "clawforge v", shell_output("#{bin}/clawforge version")
+    assert_match version.to_s, shell_output("#{bin}/clawforge version")
     assert_match "Usage:", shell_output("#{bin}/clawforge help")
   end
 end

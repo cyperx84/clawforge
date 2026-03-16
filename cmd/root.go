@@ -7,7 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.1.0"
+// Version is injected at build time via ldflags
+var Version = "dev"
 
 var rootCmd = &cobra.Command{
 	Use:   "clawforge",
@@ -48,6 +49,11 @@ func init() {
 	rootCmd.AddCommand(doctorCmd)
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(tuiCmd)
+	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(healthCmd)
+	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(diffCmd)
+	rootCmd.AddCommand(remoteCmd)
 }
 
 var versionCmd = &cobra.Command{

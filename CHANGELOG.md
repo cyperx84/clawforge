@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.1.0 — Fleet Intelligence
+
+### Added
+- `clawforge sync` — detect drift between disk and config, `--fix` to auto-repair
+- `clawforge health` — live agent health from sessions + HEARTBEAT.md
+- `clawforge deploy <id>` — one-shot create + bind + activate + gateway restart
+- `clawforge diff <id1> <id2>` — compare agents side-by-side, `--files` for full diff
+- `clawforge remote` — manage remote OpenClaw instances via SSH
+- TUI: lipgloss colored status indicators, create form, tab bar, help bar
+- 30 unit tests across 6 packages (config, fleet, observability, remote, tui, cmd)
+
+---
+
 ## v3.0.0 — Go Rewrite
 
 **ClawForge rewritten as a single Go binary with Bubble Tea TUI.**
