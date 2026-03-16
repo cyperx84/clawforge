@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.1.1
+
+_Release notes pending._
+
 ## v3.1.0 — Fleet Intelligence
 
 ### Added
