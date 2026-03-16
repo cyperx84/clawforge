@@ -1,6 +1,6 @@
 [project]
 name = "clawforge-cli"
-version = "3.1.1"
+version = "3.2.0"
 description = "Forge and manage fleets of OpenClaw agents"
 readme = "README.md"
 license = "MIT"
