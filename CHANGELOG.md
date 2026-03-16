@@ -1,8 +1,24 @@
 # Changelog
 
-## v3.1.1
+## v3.2.0 — MCP Server + Skill
 
-_Release notes pending._
+### Added
+- `clawforge mcp` — MCP server over stdio (9 fleet tools)
+- Updated SKILL.md — reflects v3.1+ commands, MCP config, all constraints documented
+- Compatible with Claude Code MCP config (`~/.claude/mcp_servers.json`)
+- 6 MCP server unit tests
+
+### MCP Tools
+`fleet_list`, `fleet_status`, `fleet_deploy`, `fleet_inspect`, `fleet_health`, `fleet_sync`, `fleet_logs`, `fleet_diff`, `fleet_destroy`
+
+---
+
+## v3.1.1 — Config Safety Fix
+
+### Fixed
+- `deploy` and `create` no longer write `role`/`emoji` to `openclaw.json` (caused gateway validation errors)
+
+---
 
 ## v3.1.0 — Fleet Intelligence
 

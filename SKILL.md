@@ -1,172 +1,183 @@
 ---
 name: clawforge
-description: "Forge and manage fleets of OpenClaw agents. Use when: (1) creating/listing/inspecting agents (create, list, inspect), (2) managing agent lifecycle (bind, activate, deactivate, destroy), (3) sharing agents (export, import), (4) managing templates (template list/show/create), (5) fleet observability (status, cost, logs). NOT for: simple one-liner fixes (just edit), reading code (use read tool)."
+description: "Forge and manage fleets of OpenClaw agents. Use when: (1) creating/listing/inspecting agents (create, list, inspect), (2) managing agent lifecycle (bind, activate, deactivate, destroy, deploy), (3) sharing agents (export, import), (4) fleet observability (status, cost, logs, health), (5) fleet sync and drift detection, (6) comparing agents (diff). NOT for: editing individual agent files (use read/edit tools directly)."
 metadata:
   {
     "openclaw":
       {
         "emoji": "🔨",
-        "requires": { "bins": ["clawforge", "jq"] },
+        "requires": { "bins": ["clawforge"] },
       },
   }
 ---
 
-# ClawForge v2.1 — Fleet Forge for OpenClaw
+# ClawForge v3.1 — Fleet Forge for OpenClaw
 
 ## Overview
 
-ClawForge forges and manages fleets of OpenClaw agents. Create, configure, bind, and monitor your agent fleet.
+ClawForge is a single Go binary for managing fleets of OpenClaw agents. No dependencies required.
+
+Install: `brew install cyperx84/tap/clawforge`
 
 ## Fleet Commands
 
-### Create & Inspect
-
 ```bash
-# Interactive agent creation wizard
-clawforge create scout
+# Create agent from archetype
+clawforge create <id> --from coder --name "Name" --role "Role" --emoji 🔧
 
-# From a template/archetype (non-interactive)
-clawforge create scout --from monitor --name Scout --role "External monitoring" --emoji "🔎"
+# One-shot: create + bind + activate + gateway restart
+clawforge deploy <id> --from coder --name "Name" --role "Role" --channel <discord-channel-id>
 
-# List all agents with status
+# List all agents
 clawforge list
+clawforge list --json
 
-# Deep view of an agent's config, workspace, and bindings
-clawforge inspect builder
+# Deep inspect
+clawforge inspect <id>
+clawforge inspect <id> --json
 
-# Edit workspace files
-clawforge edit builder --soul
-clawforge edit builder --agents
-clawforge edit builder --tools
-clawforge edit builder --heartbeat
-```
+# Edit workspace files in $EDITOR
+clawforge edit <id> --soul
+clawforge edit <id> --agents
+clawforge edit <id> --tools
 
-### Bind & Activate
-
-```bash
-# Wire to Discord channel by name
-clawforge bind scout "#scout"
-
-# Wire by channel ID
-clawforge bind scout 1476857455727345818
-
-# Remove binding
-clawforge unbind scout
-
-# Add to OpenClaw config + restart gateway
-clawforge activate scout
-
-# Deactivate (remove from config, keep workspace files)
-clawforge deactivate scout
-
-# Full removal (with confirmation)
-clawforge destroy scout --yes
-```
-
-### Clone & Export/Import
-
-```bash
 # Duplicate an agent
-clawforge clone builder builder-v2
+clawforge clone <src> <dst>
 
-# Package as shareable archive
-clawforge export builder                        # builder.clawforge in cwd
-clawforge export builder --no-user             # skip USER.md (private)
-clawforge export builder --with-memory         # include memory files
-clawforge export builder --output ~/share/builder.clawforge
+# Remove agent
+clawforge destroy <id>
 
-# Import from file or URL
-clawforge import builder.clawforge
-clawforge import https://example.com/agents/coder.clawforge
-clawforge import coder.clawforge --id my-coder --model anthropic/claude-sonnet-4-6
+# Activate/deactivate in OpenClaw config
+clawforge activate <id>
+clawforge deactivate <id>
+
+# Bind to Discord channel
+clawforge bind <id> <channel-id>
+clawforge unbind <id>
+
+# Export/import agents
+clawforge export <id>
+clawforge import <file.clawforge>
 ```
 
-### Templates
+## Observability
 
 ```bash
-# List all templates (built-in archetypes + user templates)
+# Fleet status dashboard
+clawforge status
+clawforge status <id>
+clawforge status --json
+
+# Live agent health (sessions, heartbeat, errors)
+clawforge health
+clawforge health <id>
+clawforge health --json
+
+# Cost tracking
+clawforge cost
+clawforge cost --today
+clawforge cost --week
+
+# View logs
+clawforge logs <id>
+clawforge logs <id> --tail 50
+clawforge logs <id> --follow
+```
+
+## Fleet Maintenance
+
+```bash
+# Detect drift between disk agents and openclaw.json
+clawforge sync
+clawforge sync --fix        # Auto-add disk agents to config
+clawforge sync --json
+
+# Compare two agents
+clawforge diff <id1> <id2>
+clawforge diff <id1> <id2> --files   # Include workspace file diffs
+
+# System health check
+clawforge doctor
+
+# Remote fleet management (SSH)
+clawforge remote add prod user@host
+clawforge remote list
+clawforge remote status prod
+```
+
+## Templates
+
+```bash
 clawforge template list
-
-# Preview template content
 clawforge template show coder
-
-# Save an existing agent as a reusable template
-clawforge template create my-monitor --from ops
-
-# Delete a user template (built-ins protected)
-clawforge template delete my-monitor
+clawforge template create my-template --from builder
+clawforge template delete my-template
 ```
 
 Built-in archetypes: `generalist`, `coder`, `monitor`, `researcher`, `communicator`
 
-### Health & Diagnostics
+## Config
 
 ```bash
-# Fleet + system health check
-clawforge doctor
-
-# Fleet-wide model/tool compatibility (requires clwatch)
-clawforge compat
-
-# Tool update check + fleet impact (requires clwatch)
-clawforge upgrade-check
+clawforge config                    # Show all config
+clawforge config key value          # Set a value
 ```
 
-## clwatch Integration
+Config file: `~/.clawforge/config.json`
 
-When clwatch is installed, ClawForge gains compatibility checking, deprecation warnings, and auto-patching:
+## MCP Server (for Claude Code / AI clients)
 
-```bash
-# One-shot check for tool updates, auto-patch reference files
-clawforge changelog check --auto
+ClawForge exposes an MCP server so AI coding agents can manage fleets as tools.
 
-# Daemon mode — polls every 6h
-clawforge changelog watch
+### Configure in Claude Code
 
-# Fleet-wide compatibility report
-clawforge compat
-
-# Check for tool updates with fleet impact
-clawforge upgrade-check
-```
-
-All clwatch features degrade gracefully — ClawForge works without it.
-
-## Fleet Observability
-
-```bash
-# Fleet-wide status dashboard
-clawforge status
-
-# Single agent status
-clawforge status builder
-
-# Cost tracking
-clawforge cost
-clawforge cost builder --today
-
-# View agent logs
-clawforge logs builder
-clawforge logs builder --follow
-clawforge logs builder --tail 100
-```
-
-## Configuration
-
-`config/defaults.json`:
-
+Add to `~/.claude/mcp_servers.json`:
 ```json
 {
-  "fleet": {
-    "workspace_root": "~/.openclaw/agents",
-    "template_dir": "~/.clawforge/templates",
-    "default_model": "openai-codex/gpt-5.4",
-    "default_archetype": "generalist"
-  },
-  "clwatch": {
-    "auto_check": true,
-    "warn_on_deprecations": true,
-    "compat_check_on_create": true
+  "clawforge": {
+    "command": "clawforge",
+    "args": ["mcp"],
+    "description": "Fleet management for OpenClaw agents"
   }
 }
 ```
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `fleet_list` | List all agents |
+| `fleet_status` | Fleet health dashboard |
+| `fleet_deploy` | Create + bind + activate an agent |
+| `fleet_inspect` | Deep inspect a single agent |
+| `fleet_health` | Live health metrics |
+| `fleet_sync` | Detect/fix config drift |
+| `fleet_logs` | View agent logs |
+| `fleet_diff` | Compare two agents |
+
+### Example MCP usage (from Claude Code)
+
+```
+Use the clawforge MCP to deploy a new researcher agent:
+- id: science-scout
+- from: researcher
+- name: Science Scout
+- role: Track scientific papers and breakthroughs
+- emoji: 🔬
+```
+
+## OpenClaw Paths
+
+| Path | Purpose |
+|------|---------|
+| `~/.openclaw/openclaw.json` | Main config (agents list + bindings) |
+| `~/.openclaw/agents/<id>/` | Agent workspace directories |
+| `~/.clawforge/config.json` | ClawForge user config |
+| `~/.clawforge/remotes.json` | Remote instance config |
+
+## Key Constraints
+
+- `deploy`/`create` never write `role` or `emoji` to `openclaw.json` (causes validation errors)
+- Role/emoji live in workspace SOUL.md only
+- `destroy` removes from config AND deletes workspace directory
+- `sync --fix` adds disk agents to config but does NOT restart gateway (run `openclaw gateway restart` manually)

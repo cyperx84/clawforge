@@ -54,6 +54,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(diffCmd)
 	rootCmd.AddCommand(remoteCmd)
+	rootCmd.AddCommand(mcpCmd)
 }
 
 var versionCmd = &cobra.Command{
