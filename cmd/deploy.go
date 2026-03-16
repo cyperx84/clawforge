@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/spf13/cobra"
 
@@ -23,8 +22,9 @@ var deployCmd = &cobra.Command{
 	Short: "One-shot agent deploy: create + bind + activate",
 	Long: `Streamline agent setup by combining create, bind, and activate in one command.
 
-Creates the agent workspace, writes it to openclaw.json, optionally binds
-to a Discord channel, and restarts the gateway if openclaw binary exists.`,
+Creates the agent workspace, registers it via the openclaw CLI, optionally
+binds to a Discord channel. The openclaw CLI handles config writes safely
+and triggers gateway reload automatically.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id := args[0]
@@ -35,79 +35,65 @@ to a Discord channel, and restarts the gateway if openclaw binary exists.`,
 			name = id
 		}
 
-		// Determine model
+		// Determine model — use the configured default, not a hardcoded value
 		model := agentModel
-		if model == "" {
-			model = "claude-opus-4-6"
-		}
 
-		agent := &config.Agent{
-			ID:    id,
-			Name:  name,
-			Role:  deployRole,
-			Emoji: deployEmoji,
-			Model: model,
-		}
-
-		// Step 1: Create agent in config
-		fmt.Printf("Creating agent %s...\n", id)
-		if err := fleet.CreateAgent(agent); err != nil {
-			return fmt.Errorf("create failed: %w", err)
-		}
-
-		// Step 2: Create workspace
+		// Step 1: Create workspace first so we have the path
+		fmt.Printf("Creating workspace for %s...\n", id)
 		workspace, err := fleet.CreateWorkspace(id)
 		if err != nil {
-			fleet.DeleteAgent(id)
 			return fmt.Errorf("workspace creation failed: %w", err)
 		}
 
-		// Step 3: Apply archetype if specified
+		// Step 2: Apply archetype if specified (before registering with openclaw)
 		if deployFrom != "" {
-			arch, err := fleet.GetArchetype(deployFrom)
-			if err != nil {
-				fleet.DeleteAgent(id)
+			arch, archErr := fleet.GetArchetype(deployFrom)
+			if archErr != nil {
 				fleet.DeleteWorkspace(id)
-				return fmt.Errorf("archetype failed: %w", err)
+				return fmt.Errorf("archetype failed: %w", archErr)
 			}
 			for filename, template := range arch.Templates {
 				content := fleet.SubstitutePlaceholders(
 					template, name, deployRole, deployEmoji,
 					fmt.Sprintf("Agent with role: %s", deployRole),
-					fmt.Sprintf("%v", model),
+					model,
 				)
-				if err := fleet.WriteWorkspaceFile(id, filename, content); err != nil {
-					return err
+				if writeErr := fleet.WriteWorkspaceFile(id, filename, content); writeErr != nil {
+					fleet.DeleteWorkspace(id)
+					return writeErr
 				}
 			}
 			fmt.Printf("  Applied archetype: %s\n", deployFrom)
 		}
 
-		// Step 4: Update workspace path in config
-		agent.Workspace = workspace
-		fleet.UpdateAgent(agent)
-
-		// Step 5: Bind to channel if specified
-		if deployChannel != "" {
-			if err := fleet.BindDiscord(id, deployChannel, ""); err != nil {
-				return fmt.Errorf("bind failed: %w", err)
-			}
-			fmt.Printf("  Bound to Discord channel: %s\n", deployChannel)
+		// Step 3: Register agent via openclaw CLI (safe config write + auto reload)
+		fmt.Printf("Registering agent %s...\n", id)
+		agent := &config.Agent{
+			ID:        id,
+			Name:      name,
+			Model:     model,
+			Workspace: workspace,
+		}
+		if err := fleet.CreateAgent(agent); err != nil {
+			fleet.DeleteWorkspace(id)
+			return fmt.Errorf("create failed: %w", err)
 		}
 
-		// Step 6: Restart gateway if openclaw binary exists
-		if _, err := exec.LookPath("openclaw"); err == nil {
-			fmt.Println("  Restarting OpenClaw gateway...")
-			restartCmd := exec.Command("openclaw", "gateway", "restart")
-			if output, err := restartCmd.CombinedOutput(); err != nil {
-				fmt.Printf("  Warning: gateway restart failed: %v\n%s\n", err, string(output))
+		// Step 4: Bind to channel if specified
+		if deployChannel != "" {
+			// Pass full channel spec to openclaw CLI
+			if err := fleet.AddBinding(id, "discord:"+deployChannel); err != nil {
+				fmt.Printf("  Warning: bind failed: %v\n", err)
 			} else {
-				fmt.Println("  Gateway restarted successfully.")
+				fmt.Printf("  Bound to Discord channel: %s\n", deployChannel)
 			}
 		}
 
 		fmt.Printf("\n✓ Deployed agent: %s (%s)\n", id, name)
 		fmt.Printf("  Workspace: %s\n", workspace)
+		if model != "" {
+			fmt.Printf("  Model: %s\n", model)
+		}
 		if deployChannel != "" {
 			fmt.Printf("  Channel: %s\n", deployChannel)
 		}

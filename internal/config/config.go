@@ -149,18 +149,8 @@ func (b *Binding) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Discord represents a Discord binding (kept for backward compat but bindings
-// now preserve all fields via Extra)
-type Discord struct {
-	ChannelID string `json:"channelId"`
-	ServerID  string `json:"serverId,omitempty"`
-}
-
-// Slack represents a Slack binding
-type Slack struct {
-	ChannelID   string `json:"channelId"`
-	WorkspaceID string `json:"workspaceId,omitempty"`
-}
+// Note: Discord/Slack binding structs removed. Bindings now use the OpenClaw
+// native "match" format and preserve all fields via Binding.Extra.
 
 // UserConfig represents the ~/.clawforge/config.json structure
 type UserConfig struct {
